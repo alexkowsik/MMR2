@@ -33,7 +33,6 @@ class GraphAsMatrix:
     def num_nodes(self):
         return self.numOfNodes
 
-    # TODO: rewrite
     def num_edges(self):
         return self.numOfEdges
 
@@ -146,3 +145,4 @@ if __name__ == '__main__':
     g.print_graph()
 
     print()
+
