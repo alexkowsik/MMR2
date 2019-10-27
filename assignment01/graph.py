@@ -1,3 +1,5 @@
+# TODO: let out_edges/in_edges also return node values
+
 
 class GraphAsMatrix:
     def __init__(self):
