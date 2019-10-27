@@ -14,3 +14,6 @@ class PQueue:
 
     def pop_min(self):
         return self.items.pop(0)
+
+    def get_length(self):
+        return len(self.items)
