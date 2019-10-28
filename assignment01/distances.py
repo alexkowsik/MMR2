@@ -83,8 +83,10 @@ class Window(QMainWindow):
             min = 100000.0
             key = 0
             for i in g.nodes:
-                if sqrt(pow(g.nodes[i][3]-x,2)+pow(g.nodes[i][2]-y,2)) < min:
-                    min = sqrt(pow(g.nodes[i][3]-x,2)+pow(g.nodes[i][2]-y,2))
+                x1=((maxLaengengrad - g.nodes[i][3]) / diffLaenge) * self.width
+                y1=((maxBreitengrad - g.nodes[i][2]) / diffBreite) * self.height
+                if sqrt(pow(x1-x,2)+pow(y1-y,2)) < min:
+                    min = sqrt(pow(x1-x,2)+pow(y1-y,2))
                     key = i
             painter.drawPoint(g.nodes[key][3],g.nodes[key][2])
             self.show()
