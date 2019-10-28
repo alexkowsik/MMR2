@@ -88,7 +88,9 @@ class Window(QMainWindow):
                 if sqrt(pow(x1-x,2)+pow(y1-y,2)) < min:
                     min = sqrt(pow(x1-x,2)+pow(y1-y,2))
                     key = i
-            painter.drawPoint(g.nodes[key][3],g.nodes[key][2])
+            x1 = ((maxLaengengrad - g.nodes[key][3]) / diffLaenge) * self.width
+            y1 = ((maxBreitengrad - g.nodes[key][2]) / diffBreite) * self.height
+            painter.drawPoint(x1,y1)
             self.show()
 
     def mousePressEvent(self, event):
