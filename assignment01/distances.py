@@ -80,8 +80,8 @@ class Window(QMainWindow):
             painter.setPen(pen)
             x = self.mousePos.x()
             y = self.mousePos.y()
+            print(x,y)
             min = 100000.0
-            key = 0
             for i in g.nodes:
                 x1=((maxLaengengrad - g.nodes[i][3]) / diffLaenge) * self.width
                 y1=((maxBreitengrad - g.nodes[i][2]) / diffBreite) * self.height
