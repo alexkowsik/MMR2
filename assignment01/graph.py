@@ -91,8 +91,11 @@ class GraphAsList:
         self.numOfNodes += 1
 
     def add_edge(self, edge, value=0):
-        next(x for x in self.nodes if x[0] == edge[0])[2].append((edge[1],value))
-        self.numOfEdges += 1
+        try:
+            next(x for x in self.nodes if x[0] == edge[0])[2].append((edge[1],value))
+            self.numOfEdges += 1
+        except:
+            pass
 
     def num_nodes(self):
         return self.numOfNodes
@@ -122,9 +125,15 @@ class GraphAsList:
                     edges.append((i, u, edge[1]))
         return edges
 
-    def print_graph(self):
+    def print_graph(self, i = 0):
+        if i == 0:
+            i = len(self.nodes)
+        count = 0
         for node_list in self.nodes:
             print("node " , node_list[0] , ":" ,node_list)
+            count+= 1
+            if count == i:
+                return
 
     # currently returns only one connection
     def nodes_connected(self, u, v):
@@ -143,3 +152,4 @@ if __name__ == '__main__':
     g.add_node(3)
     g.add_edge((1,3))
     g.print_graph()
+    print(next(x for x in g.nodes if x[0] == 1))

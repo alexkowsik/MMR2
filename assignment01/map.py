@@ -1,3 +1,3 @@
-from MMR2.assignment01.graph import GraphAsMatrix, GraphAsList
+from .graph import GraphAsMatrix, GraphAsList
 import csv
 
