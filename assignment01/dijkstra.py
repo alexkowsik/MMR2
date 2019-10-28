@@ -38,20 +38,20 @@ def dijkstra(graph, s, t):
             if not G.__contains__(edge[1]):
                 edge[1][1] = edge[0][1] + edge[2]  # value of v = value of u + weight of edge
                 G.push(edge[1])
-                p[edge[1][0]] = edge
+                p[edge[1][0]] = (edge[0][0], edge[1][0])
             elif edge[0][1] + edge[2] < edge[1][1]:
                 G.decrease_key(edge[1], edge[0][1] + edge[2])
-                p[edge[1][0]] = edge
+                p[edge[1][0]] = (edge[0][0], edge[1][0])
 
     if t[1] == float("inf"):
         return False
 
     P = list()
-    u = t
+    u = t[0]
 
-    while u != s:
-        P.append(p[u[0]])
-        u = p[u[0]][0]
+    while u != s[0]:
+        P.append(p[u])
+        u = p[u][0]
 
     return P
 
