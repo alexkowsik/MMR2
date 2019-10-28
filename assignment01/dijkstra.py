@@ -26,12 +26,8 @@ def dijkstra(graph, s, t):
 
             # convert all tuples to lists because tuples are immutable
             edge = list(edge)
-            tmp = edge[0]
-            tmp = list(tmp)
-            edge[0] = tmp
-            tmp = edge[1]
-            tmp = list(tmp)
-            edge[1] = tmp
+            edge[0] = list(edge[0])
+            edge[1] = list(edge[1])
 
             if edge[1] in S:
                 break
