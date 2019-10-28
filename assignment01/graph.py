@@ -90,6 +90,15 @@ class GraphAsList:
         self.nodes.append((id, value, [],breitenG,laengenG))  # last 2 fields are breiten/laengengrad
         self.numOfNodes += 1
 
+    def set_node_value(self, node_id, value):
+        for index, node in enumerate(self.nodes):
+            if node[0] == node_id:
+                tmp = list(self.nodes[index])
+                tmp[1] = value
+                tmp = tuple(tmp)
+                self.nodes[index] = tmp
+                return
+
     def add_edge(self, edge, value=0):
         try:
             next(x for x in self.nodes if x[0] == edge[0])[2].append((edge[1],value))
