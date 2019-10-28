@@ -14,8 +14,6 @@ def dijkstra(graph, s, t):
     G.push(s)
 
     while G.get_length():
-        print("G", G.items)
-
         u = list(G.pop_min())
         S.append(u)
 
@@ -34,9 +32,6 @@ def dijkstra(graph, s, t):
             tmp = edge[1]
             tmp = list(tmp)
             edge[1] = tmp
-
-            print("S", S)
-            print("edge", edge)
 
             if edge[1] in S:
                 break
