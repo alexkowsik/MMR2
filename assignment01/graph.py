@@ -86,12 +86,12 @@ class GraphAsList:
         self.numOfNodes = 0
         self.numOfEdges = 0
 
-    def add_node(self, value=0):
-        self.nodes.append((value, []))
+    def add_node(self, id,value=0, breitenG=0,laengenG=0):      # id is an int identifying the node
+        self.nodes.append((id, value, [],breitenG,laengenG))  # last 2 fields are breiten/laengengrad
         self.numOfNodes += 1
 
     def add_edge(self, edge, value=0):
-        self.nodes[edge[0]][1].append((edge[1], value))
+        next(x for x in self.nodes if x[0] == edge[0])[2].append((edge[1],value))
         self.numOfEdges += 1
 
     def num_nodes(self):
@@ -124,7 +124,7 @@ class GraphAsList:
 
     def print_graph(self):
         for node_list in self.nodes:
-            print(node_list)
+            print("node " , node_list[0] , ":" ,node_list)
 
     # currently returns only one connection
     def nodes_connected(self, u, v):
@@ -138,12 +138,8 @@ class GraphAsList:
 
 
 if __name__ == '__main__':
-    g = GraphAsMatrix()
-    g.add_node()
-    g.add_node()
-    g.add_edge((0, 2))
-    g.add_edge((0, 1))
-    g.add_edge((1, 2))
+    g = GraphAsList()
+    g.add_node(1)
+    g.add_node(3)
+    g.add_edge((1,3))
     g.print_graph()
-
-    print()
