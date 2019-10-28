@@ -83,7 +83,7 @@ class Window(QMainWindow):
         painter = QtGui.QPainter(self.pixmap)
         painter.drawPixmap(self.rect(), self.pixmap)
         if self.flag:
-            pen = QtGui.QPen(Qt.yellow,3)
+            pen = QtGui.QPen(Qt.yellow,8)
             painter.setPen(pen)
             x = self.mousePos.x()
             y = self.mousePos.y()
