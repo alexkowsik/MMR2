@@ -113,14 +113,19 @@ class GraphAsList:
 
     def out_edges(self, u):
         edges = []
-        for node in self.nodes[u][1]:
-            edges.append((u, node[0], node[1]))  # (u, v, value of edge)
+        for node in self.nodes[u[0]][2]:
+            tmp_node = None
+            for node2 in self.nodes:
+                if node2[0] == node[0]:
+                    tmp_node = node2
+                    break
+            edges.append((u, tmp_node, node[1]))  # (u, v, value of edge)
         return edges
 
     def in_edges(self, u):
         edges = []
         for i in range(self.numOfNodes):
-            for edge in self.nodes[i][1]:
+            for edge in self.nodes[i][2]:
                 if edge[0] == u:
                     edges.append((i, u, edge[1]))
         return edges
