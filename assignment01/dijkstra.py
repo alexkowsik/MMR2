@@ -32,12 +32,13 @@ def dijkstra(graph, s, t):
             if edge[1] in S:
                 break
             if not G.__contains__(edge[1]):
-                edge[1][1] = edge[0][1] + edge[2]  # value of v = value of u + weight of edge
+                graph.set_node_value(edge[1][0], u[1] + edge[2])
+                edge[1][1] = u[1] + edge[2]  # value of v = value of u + weight of edge
                 G.push(edge[1])
-                p[edge[1][0]] = (edge[0][0], edge[1][0])
-            elif edge[0][1] + edge[2] < edge[1][1]:
-                G.decrease_key(edge[1], edge[0][1] + edge[2])
-                p[edge[1][0]] = (edge[0][0], edge[1][0])
+                p[edge[1][0]] = (u[0], edge[1][0])
+            elif u[1] + edge[2] < edge[1][1]:
+                G.decrease_key(edge[1][0], u[1] + edge[2])
+                p[edge[1][0]] = (u[0], edge[1][0])
 
     if t[1] == float("inf"):
         return False
@@ -58,8 +59,8 @@ g.add_node(1)
 g.add_node(2)
 
 g.add_edge((0, 1), 1)
-g.add_edge((1, 2), 2)
 g.add_edge((0, 2), 1)
+g.add_edge((1, 2), 2)
 
 path = dijkstra(g, g.nodes[0], g.nodes[2])
 
