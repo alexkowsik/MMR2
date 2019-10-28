@@ -33,6 +33,8 @@ class Window(QMainWindow):
     def __init__(self):
         super().__init__()
 
+        self.display = QLabel()
+
         self.title = "PyQt5 Drawing Tutorial"
 
         self.top = 150
@@ -47,13 +49,15 @@ class Window(QMainWindow):
 
         self.flag = False
 
+        self.setCentralWidget(self.display)
+
 
     def InitWindow(self):
 
         self.setGeometry(self.top, self.left, self.width, self.height)
         ###
-        painter = QtGui.QPainter(self)
         self.pixmap = QtGui.QPixmap("maps/Black.jpg")
+        painter = QtGui.QPainter(self.pixmap)
         painter.drawPixmap(self.rect(), self.pixmap)
         pen = QtGui.QPen(Qt.white, 2)
         painter.setPen(pen)
@@ -70,10 +74,12 @@ class Window(QMainWindow):
             painter.setPen(pen)
             painter.drawPoint(x, y)
         ###
+        self.display.setPixmap(self.pixmap)
+        self.display.show()
         self.show()
 
     def paintEvent(self, event):
-        painter = QtGui.QPainter(self)
+        painter = QtGui.QPainter(self.pixmap)
         painter.drawPixmap(self.rect(), self.pixmap)
         if self.flag:
             pen = QtGui.QPen(Qt.yellow,3)
@@ -89,6 +95,8 @@ class Window(QMainWindow):
                     min = sqrt(pow(x1-x,2)+pow(y1-y,2))
                     key = i
             painter.drawPoint(g.nodes[key][3],g.nodes[key][2])
+            self.display.setPixmap(self.pixmap)
+            self.display.show()
             self.show()
 
     def mousePressEvent(self, event):
