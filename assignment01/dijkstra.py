@@ -30,7 +30,7 @@ def dijkstra(graph, s, t):
             edge[1] = list(edge[1])
 
             if edge[1] in S:
-                break
+                continue
             if not G.__contains__(edge[1]):
                 graph.set_node_value(edge[1][0], u[1] + edge[2])
                 edge[1][1] = u[1] + edge[2]  # value of v = value of u + weight of edge
@@ -57,11 +57,16 @@ g = GraphAsList()
 g.add_node(0)
 g.add_node(1)
 g.add_node(2)
+g.add_node(3)
+g.add_node(4)
 
 g.add_edge((0, 1), 1)
-g.add_edge((0, 2), 1)
-g.add_edge((1, 2), 2)
+g.add_edge((1, 2), 7)
+g.add_edge((2, 3), 2)
+g.add_edge((3, 1), 3)
+g.add_edge((3, 4), 1)
+g.add_edge((1, 4), 3434)
 
-path = dijkstra(g, g.nodes[0], g.nodes[2])
+path = dijkstra(g, g.nodes[0], g.nodes[4])[::-1]
 
 print(path)

@@ -10,7 +10,6 @@ class PQueue:
         for index, element in enumerate(self.items):
             if element[0] == u:
                 self.items[index][1] = value
-                print("yay")
                 return
 
     def pop_min(self):
