@@ -1,31 +1,72 @@
 from MMR2.assignment01.priority_queue import PQueue
-from MMR2.assignment01.graph import GraphAsMatrix, GraphAsList
+from MMR2.assignment01.graph import GraphAsList
 
-graph = GraphAsList()  # create graph
 
-s = None  # start node (u, value)
-t = None  # end node (u, value)
+def dijkstra(graph, s, t):
+    G = PQueue()
+    S = list()
+    p = [None] * graph.numOfNodes
 
-G = PQueue()
-S = list()
-p = PQueue()
-d = PQueue()  # push nodes with float("inf") values?
+    t = list(t)
+    s = list(s)
+    s[1] = 0  # d_u is now in value of u
 
-G.push(s[0], s[1])
-d.push(s, 0)
+    G.push(s)
 
-while G.get_length():
-    u = G.pop_min()
-    S.append(u)
+    while G.get_length():
+        u = list(G.pop_min())
+        S.append(u)
 
-    if u == t:
-        break
-
-    out_edges = graph.out_edges(u)
-
-    for edge in out_edges:
-        if edge[1] == u:
+        if u == t:
             break
-        if not edge[0] in G:
-            G.push(edge[0])
-            # ...
+
+        out_edges = graph.out_edges(u)
+
+        for edge in out_edges:
+
+            # convert all tuples to lists because tuples are immutable
+            edge = list(edge)
+            edge[0] = list(edge[0])
+            edge[1] = list(edge[1])
+
+            if edge[1] in S:
+                continue
+            if not G.__contains__(edge[1]):
+                graph.set_node_value(edge[1][0], u[1] + edge[2])
+                edge[1][1] = u[1] + edge[2]  # value of v = value of u + weight of edge
+                G.push(edge[1])
+                p[edge[1][0]] = (u[0], edge[1][0])
+            elif u[1] + edge[2] < edge[1][1]:
+                G.decrease_key(edge[1][0], u[1] + edge[2])
+                p[edge[1][0]] = (u[0], edge[1][0])
+
+    if t[1] == float("inf"):
+        return False
+
+    P = list()
+    u = t[0]
+
+    while u != s[0]:
+        P.append(p[u])
+        u = p[u][0]
+
+    return P
+
+
+g = GraphAsList()
+g.add_node(0)
+g.add_node(1)
+g.add_node(2)
+g.add_node(3)
+g.add_node(4)
+
+g.add_edge((0, 1), 1)
+g.add_edge((1, 2), 7)
+g.add_edge((2, 3), 2)
+g.add_edge((3, 1), 3)
+g.add_edge((3, 4), 1)
+g.add_edge((1, 4), 3434)
+
+path = dijkstra(g, g.nodes[0], g.nodes[4])[::-1]
+
+print(path)

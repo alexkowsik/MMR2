@@ -2,9 +2,9 @@ class PQueue:
     def __init__(self):
         self.items = []
 
-    def push(self, u, value):
-        self.items.append((u, value))
-        self.items.sort()
+    def push(self, node):
+        self.items.append(node)
+        self.items = sorted(self.items, key=lambda x: x[1])  # sort by value which is the second entry
 
     def decrease_key(self, u, value):
         for index, element in enumerate(self.items):
@@ -17,3 +17,9 @@ class PQueue:
 
     def get_length(self):
         return len(self.items)
+
+    def __contains__(self, item):
+        if item in self.items:
+            return True
+        else:
+            return False
