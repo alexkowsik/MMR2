@@ -2,9 +2,9 @@ class PQueue:
     def __init__(self):
         self.items = []
 
-    def push(self, node):
+    def push(self,p, node):
         self.items.append(node)
-        self.items = sorted(self.items, key=lambda x: x[1])  # sort by value which is the second entry
+        self.items = sorted(self.items, key=lambda x: p[x][1])  # sort by value which is the second entry
 
     def decrease_key(self, u, value):
         for index, element in enumerate(self.items):

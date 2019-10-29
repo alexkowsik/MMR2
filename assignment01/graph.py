@@ -194,26 +194,34 @@ class GraphAsDict:
         return e[1]
 
     def out_edges(self, u):
+
         edges = []
-        for node in self.nodes[u][1]:
-            edges.append((u, node[0], node[1]))  # (u, v, value of edge)
+        uNodes = [x[0] for x in self.nodes[u][1]]
+        for node in uNodes:
+            tmp_node = None
+            for node2 in self.nodes:
+                if node2 == node:
+                    tmp_node = node2
+                    break
+
+            edges.append((u, tmp_node, self.nodes[node][0]))  # (u, v, value of edge)
         return edges
 
     def in_edges(self, u):
         edges = []
         for i in range(self.numOfNodes):
-            for edge in self.nodes[i][1]:
+            for edge in self.nodes[i][2]:
                 if edge[0] == u:
                     edges.append((i, u, edge[1]))
         return edges
 
-    def print_graph(self, i = 0):
+    def print_graph(self, i=0):
         if i == 0:
             i = len(self.nodes)
         count = 0
         for node_list in self.nodes:
-            print("node " , node_list[0] , ":" ,node_list)
-            count+= 1
+            print("node ", node_list[0], ":", node_list)
+            count += 1
             if count == i:
                 return
 

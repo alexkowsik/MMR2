@@ -3,8 +3,10 @@ from PyQt5.QtCore import Qt,QPoint
 from PyQt5.QtWidgets import QApplication, QMainWindow, QLabel
 from math import sin,cos,acos,sqrt,pow
 import sys
-from graph import GraphAsList, GraphAsDict
+from graph import GraphAsDict
+from dijkstra import dijkstra
 import csv
+
 g = GraphAsDict()
 with open("maps/nodes.csv",newline="") as file:    #open file
     reader = csv.reader(file,delimiter=",")
@@ -32,6 +34,8 @@ class Window(QMainWindow):
 
     def __init__(self):
         super().__init__()
+        print("ok")
+        self.hist = []
 
         self.display = QLabel()
 
@@ -55,6 +59,7 @@ class Window(QMainWindow):
     def InitWindow(self):
 
         self.setGeometry(self.top, self.left, self.width, self.height)
+        self.display.setGeometry(self.top, self.left, self.width, self.height)
         ###
         painter = QtGui.QPainter(self)
         self.pixmap = QtGui.QPixmap("maps/Black.jpg")
@@ -83,11 +88,10 @@ class Window(QMainWindow):
         painter = QtGui.QPainter(self.pixmap)
         painter.drawPixmap(self.rect(), self.pixmap)
         if self.flag:
-            pen = QtGui.QPen(Qt.yellow,8)
+            pen = QtGui.QPen(Qt.yellow,7)
             painter.setPen(pen)
             x = self.mousePos.x()
             y = self.mousePos.y()
-            print(x,y)
             min = 100000.0
             for i in g.nodes:
                 x1=((maxLaengengrad - g.nodes[i][3]) / diffLaenge) * self.width
@@ -95,10 +99,14 @@ class Window(QMainWindow):
                 if sqrt(pow(x1-x,2)+pow(y1-y,2)) < min:
                     min = sqrt(pow(x1-x,2)+pow(y1-y,2))
                     key = i
+            if key not in self.hist:
+                self.hist.append(key)
             x1 = ((maxLaengengrad - g.nodes[key][3]) / diffLaenge) * self.width
             y1 = ((maxBreitengrad - g.nodes[key][2]) / diffBreite) * self.height
             painter.drawPoint(x1,y1)
-            painter.drawPoint(g.nodes[key][3],g.nodes[key][2])
+            ###
+
+
             self.display.setPixmap(self.pixmap)
             self.display.show()
             self.show()
@@ -107,7 +115,25 @@ class Window(QMainWindow):
         self.mousePos = event.pos()
         self.flag = True
         self.update()
+    def keyPressEvent(self, event):
+        if event.key() == Qt.Key_D:
+            if len(self.hist) > 1:
+                painter = QtGui.QPainter(self.pixmap)
+                print(self.hist[-1],self.hist[-2])
 
+                path = dijkstra(g, self.hist[-1],self.hist[-2])[::-1]
+                if len(path) == 0:
+                    return
+                print(len(path))
+                pen = QtGui.QPen(Qt.green, 2)
+                painter.setPen(pen)
+                for i in range(len(path)-1):
+                    x1 = ((maxLaengengrad - g.nodes[path[i]][3]) / diffLaenge) * self.width
+                    y1 = ((maxBreitengrad - g.nodes[path[i]][2]) / diffBreite) * self.height
+                    x2 = ((maxLaengengrad - g.nodes[path[i+1]][3]) / diffLaenge) * self.width
+                    y2 = ((maxBreitengrad - g.nodes[path[i+1]][2]) / diffBreite) * self.height
+                    painter.drawLine(QPoint(x2, y2), QPoint(x1, y1))
+                self.show()
 if __name__ =="__main__":
     App = QApplication(sys.argv)
     window = Window()
