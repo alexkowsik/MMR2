@@ -10,7 +10,7 @@ WIDTH, HEIGHT = 200, 200
 class VolumetricObject:
 
     def __init__(self):
-        self.vertices = np.empty((0, 3), dtype=int)
+        self.vertices = np.empty((0, 3), dtype=int)  # vertex is list [x, y, z]
         self.polygons = np.empty((0, 4), dtype=int)  # numbers in self.polygons represent indices in self.vertices
         self.numOfVertices = 0
         self.numOfPolygons = 0
@@ -30,55 +30,76 @@ class Modeling:
         self.display = QLabel()
         self.img = QImage(WIDTH, HEIGHT, QImage.Format_RGBA8888)
         self.painter = QPainter(self.img)
-        self.objects = list()
+        self.objects = list()  # holds all objects in scene
 
         self.display.setPixmap(QPixmap.fromImage(self.img))
         self.display.show()
 
+    # adds object to scene
     def add_object(self, obj):
         self.objects.append(obj)
+        self.draw()  # redraw whole scene
 
-    # for now only works with cube
+    # draws all objects to self.img
     def draw(self):
         for obj in self.objects:
             for polygon in obj.polygons:
-                vertices = obj.vertices[polygon - 1]
-                tmp = np.empty((0, 2), dtype=int)
+                vertices = obj.vertices[polygon - 1]  # vertices of current polygon
+                coords = self.perspective_projection(vertices)  # holds coordinates of projected polygon
 
-                for vertex in vertices:
-                    tmp = np.vstack((tmp, np.array([vertex[0] - 0.5 * np.sqrt(10 * vertex[2]) + 60,
-                                                    vertex[1] + 0.5 * np.sqrt(10 * vertex[2]) + 40])))
-
-                for i in range(4):
-                    self.painter.drawLine(tmp[(0 + i) % 4][0], tmp[(0 + i) % 4][1], tmp[(1 + i) % 4][0],
-                                          tmp[(1 + i) % 4][1])
+                # draws all lines: v0-v1, v1-v2, ... , vn-v0
+                l = len(coords)
+                for i in range(l):
+                    self.painter.drawLine(coords[(0 + i) % l][0], coords[(0 + i) % l][1], coords[(1 + i) % l][0],
+                                          coords[(1 + i) % l][1])
+        # sets pixmap for new scene
         self.display.setPixmap(QPixmap.fromImage(self.img))
         self.display.show()
 
+    # perspective projection as described in explanation no. 2
+    @staticmethod
+    def perspective_projection(vertices):
+        coords = np.empty((0, 2), dtype=int)
+
+        # factor 10 instead of 2 for better visual and +60/+40 to center the object on the image
+        for vertex in vertices:
+            coords = np.vstack((coords, np.array([vertex[0] - 0.5 * np.sqrt(10 * vertex[2]) + 60,
+                                                  vertex[1] + 0.5 * np.sqrt(10 * vertex[2]) + 40])))
+        return coords
+
+
+# class to quickly create basic objects
+class TemplateObjects:
+
+    @staticmethod
+    def create_standard_cube():
+        obj = VolumetricObject()
+
+        obj.add_vertex(0, 0, 0)
+        obj.add_vertex(0, 100, 0)
+        obj.add_vertex(100, 100, 0)
+        obj.add_vertex(100, 0, 0)
+        obj.add_vertex(0, 0, 100)
+        obj.add_vertex(0, 100, 100)
+        obj.add_vertex(100, 100, 100)
+        obj.add_vertex(100, 0, 100)
+
+        obj.add_polygon(np.array([1, 2, 3, 4]))
+        obj.add_polygon(np.array([1, 4, 8, 5]))
+        obj.add_polygon(np.array([1, 2, 6, 5]))
+        obj.add_polygon(np.array([5, 6, 7, 8]))
+        obj.add_polygon(np.array([3, 4, 8, 7]))
+        obj.add_polygon(np.array([2, 3, 7, 6]))
+        return obj
 
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
 
-    obj = VolumetricObject()
-    obj.add_vertex(0, 0, 0)
-    obj.add_vertex(0, 100, 0)
-    obj.add_vertex(100, 100, 0)
-    obj.add_vertex(100, 0, 0)
-    obj.add_vertex(0, 0, 100)
-    obj.add_vertex(0, 100, 100)
-    obj.add_vertex(100, 100, 100)
-    obj.add_vertex(100, 0, 100)
-
-    obj.add_polygon(np.array([1, 2, 3, 4]))
-    obj.add_polygon(np.array([1, 4, 8, 5]))
-    obj.add_polygon(np.array([1, 2, 6, 5]))
-    obj.add_polygon(np.array([5, 6, 7, 8]))
-    obj.add_polygon(np.array([3, 4, 8, 7]))
-    obj.add_polygon(np.array([2, 3, 7, 6]))
-
+    templates = TemplateObjects
+    cube = templates.create_standard_cube()
+    
     M = Modeling()
-    M.add_object(obj)
-    M.draw()
+    M.add_object(cube)
 
     app.exec()
