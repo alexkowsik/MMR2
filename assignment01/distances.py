@@ -169,7 +169,7 @@ class Window(QMainWindow):
                 painter = QtGui.QPainter(self.pixmap)
                 # print(self.hist[-1], self.hist[-2])
 
-                path = dijkstra_landmarks(g, self.hist[-1], self.hist[-2])[::-1]
+                path = dijkstra_landmarks(g, self.hist[-1], self.hist[-2], self.hist)[::-1]
 
                 if len(path) == 0:
                     return

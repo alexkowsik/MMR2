@@ -1,5 +1,3 @@
-# TODO: let out_edges/in_edges also return node values
-
 
 class GraphAsMatrix:
     def __init__(self):
@@ -178,6 +176,7 @@ class GraphAsDict:
 
     def add_edge(self, edge, value=0):
         self.nodes[edge[0]][1].append((edge[1],value))
+        self.numOfEdges += 1
 
     def num_nodes(self):
         return self.numOfNodes

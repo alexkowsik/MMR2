@@ -45,8 +45,8 @@ def get_landmark_heueristic(u, t, l):   # takes node_IDs u and t for current and
         print('no landmarks in landmark list!')
     h = []
     for L in l:
-        d_uL = L[u]
-        d_tL = L[t]
+        d_uL = L[u][1]
+        d_tL = L[t][1]
         temp = d_uL - d_tL
         if temp >= 0:
             h.append(temp)
