@@ -45,7 +45,7 @@ class Modeling:
         for obj in self.objects:
             for polygon in obj.polygons:
                 vertices = obj.vertices[polygon - 1]  # vertices of current polygon
-                coords = self.perspective_projection(vertices)  # holds coordinates of projected polygon
+                coords = self.oblique_projection(vertices)  # holds coordinates of projected polygon
 
                 # draws all lines: v0-v1, v1-v2, ... , vn-v0
                 l = len(coords)
@@ -56,9 +56,9 @@ class Modeling:
         self.display.setPixmap(QPixmap.fromImage(self.img))
         self.display.show()
 
-    # perspective projection as described in explanation no. 2
+    # oblique projection as described in explanation no. 2
     @staticmethod
-    def perspective_projection(vertices):
+    def oblique_projection(vertices):
         coords = np.empty((0, 2), dtype=int)
 
         # factor 10 instead of 2 for better visual and +60/+40 to center the object on the image
@@ -98,7 +98,7 @@ if __name__ == '__main__':
 
     templates = TemplateObjects
     cube = templates.create_standard_cube()
-    
+
     M = Modeling()
     M.add_object(cube)
 
