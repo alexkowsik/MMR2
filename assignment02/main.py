@@ -2,9 +2,10 @@ import sys
 import numpy as np
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
+from PyQt5.QtCore import *
 
 
-WIDTH, HEIGHT = 200, 200
+WIDTH, HEIGHT = 400, 400
 
 
 class VolumetricObject:
@@ -45,13 +46,14 @@ class Modeling:
         for obj in self.objects:
             for polygon in obj.polygons:
                 vertices = obj.vertices[polygon - 1]  # vertices of current polygon
-                coords = self.oblique_projection(vertices)  # holds coordinates of projected polygon
+                # coords = self.oblique_projection(vertices)  # holds coordinates of projected polygon
+                coords = self.perspective_projection(vertices)
 
-                # draws all lines: v0-v1, v1-v2, ... , vn-v0
+                # draws all lines of polygon: v0-v1, v1-v2, ... , vn-v0
                 l = len(coords)
                 for i in range(l):
-                    self.painter.drawLine(coords[(0 + i) % l][0], coords[(0 + i) % l][1], coords[(1 + i) % l][0],
-                                          coords[(1 + i) % l][1])
+                    self.painter.drawLine(QPointF(coords[(0 + i) % l][0], coords[(0 + i) % l][1]),
+                                          QPointF(coords[(1 + i) % l][0], coords[(1 + i) % l][1]))
         # sets pixmap for new scene
         self.display.setPixmap(QPixmap.fromImage(self.img))
         self.display.show()
@@ -59,12 +61,25 @@ class Modeling:
     # oblique projection as described in explanation no. 2
     @staticmethod
     def oblique_projection(vertices):
-        coords = np.empty((0, 2), dtype=int)
+        coords = np.empty((0, 2))
 
         # factor 10 instead of 2 for better visual and +60/+40 to center the object on the image
         for vertex in vertices:
             coords = np.vstack((coords, np.array([vertex[0] - 0.5 * np.sqrt(10 * vertex[2]) + 60,
                                                   vertex[1] + 0.5 * np.sqrt(10 * vertex[2]) + 40])))
+        return coords
+
+    # perspective projection
+    @staticmethod
+    def perspective_projection(vertices):
+        coords = np.empty((0, 2))
+        a = 200
+
+        for vertex in vertices:
+            coords = np.vstack((coords, np.array([a * vertex[0] / (vertex[2] + a) + 50,
+                                                  a * vertex[1] / (vertex[2] + a) + 50])))
+
+        print(coords)
         return coords
 
 
