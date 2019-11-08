@@ -4,6 +4,9 @@ from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 
 
+WIDTH, HEIGHT = 200, 200
+
+
 class VolumetricObject:
 
     def __init__(self):
@@ -21,9 +24,41 @@ class VolumetricObject:
         self.numOfPolygons += 1
 
 
+class Modeling:
+
+    def __init__(self):
+        self.display = QLabel()
+        self.img = QImage(WIDTH, HEIGHT, QImage.Format_RGBA8888)
+        self.painter = QPainter(self.img)
+        self.objects = list()
+
+        self.display.setPixmap(QPixmap.fromImage(self.img))
+        self.display.show()
+
+    def add_object(self, obj):
+        self.objects.append(obj)
+
+    # for now only works with cube
+    def draw(self):
+        for obj in self.objects:
+            for polygon in obj.polygons:
+                vertices = obj.vertices[polygon - 1]
+                tmp = np.empty((0, 2), dtype=int)
+
+                for vertex in vertices:
+                    tmp = np.vstack((tmp, np.array([vertex[0] - 0.5 * np.sqrt(10 * vertex[2]) + 60,
+                                                    vertex[1] + 0.5 * np.sqrt(10 * vertex[2]) + 40])))
+
+                for i in range(4):
+                    self.painter.drawLine(tmp[(0 + i) % 4][0], tmp[(0 + i) % 4][1], tmp[(1 + i) % 4][0],
+                                          tmp[(1 + i) % 4][1])
+        self.display.setPixmap(QPixmap.fromImage(self.img))
+        self.display.show()
+
+
+
 if __name__ == '__main__':
     app = QApplication(sys.argv)
-    display = QLabel()
 
     obj = VolumetricObject()
     obj.add_vertex(0, 0, 0)
@@ -42,21 +77,8 @@ if __name__ == '__main__':
     obj.add_polygon(np.array([3, 4, 8, 7]))
     obj.add_polygon(np.array([2, 3, 7, 6]))
 
-    img = QImage(200, 200, QImage.Format_RGBA8888)
-    painter = QPainter(img)
-
-    for polygon in obj.polygons:
-        vertices = obj.vertices[polygon - 1]
-        tmp = np.empty((0, 2), dtype=int)
-
-        for vertex in vertices:
-            tmp = np.vstack((tmp, np.array([vertex[0] - 0.5*np.sqrt(10 * vertex[2]) + 60,
-                                            vertex[1] + 0.5 * np.sqrt(10 * vertex[2]) + 40])))
-
-        for i in range(4):
-            painter.drawLine(tmp[(0 + i) % 4][0], tmp[(0 + i) % 4][1], tmp[(1 + i) % 4][0], tmp[(1 + i) % 4][1])
-
-    display.setPixmap(QPixmap.fromImage(img))
-    display.show()
+    M = Modeling()
+    M.add_object(obj)
+    M.draw()
 
     app.exec()
