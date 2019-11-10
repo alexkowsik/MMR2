@@ -46,14 +46,10 @@ class Modeling:
         for obj in self.objects:
             for polygon in obj.polygons:
                 vertices = obj.vertices[polygon - 1]  # vertices of current polygon
-                # coords = self.oblique_projection(vertices)  # holds coordinates of projected polygon
-                coords = self.perspective_projection(vertices)
+                proj_pol = self.oblique_projection(vertices)  # projected polygon QPolygonF
+                # proj_pol = self.perspective_projection(vertices)
 
-                # draws all lines of polygon: v0-v1, v1-v2, ... , vn-v0
-                l = len(coords)
-                for i in range(l):
-                    self.painter.drawLine(QPointF(coords[(0 + i) % l][0], coords[(0 + i) % l][1]),
-                                          QPointF(coords[(1 + i) % l][0], coords[(1 + i) % l][1]))
+                self.painter.drawPolygon(proj_pol)
         # sets pixmap for new scene
         self.display.setPixmap(QPixmap.fromImage(self.img))
         self.display.show()
@@ -61,26 +57,24 @@ class Modeling:
     # oblique projection as described in explanation no. 2
     @staticmethod
     def oblique_projection(vertices):
-        coords = np.empty((0, 2))
+        polygon = QPolygonF()
 
         # factor 10 instead of 2 for better visual and +60/+40 to center the object on the image
         for vertex in vertices:
-            coords = np.vstack((coords, np.array([vertex[0] - 0.5 * np.sqrt(10 * vertex[2]) + 60,
-                                                  vertex[1] + 0.5 * np.sqrt(10 * vertex[2]) + 40])))
-        return coords
+            polygon.append(QPointF(vertex[0] - 0.5 * np.sqrt(10 * vertex[2]) + 60,
+                                   vertex[1] + 0.5 * np.sqrt(10 * vertex[2]) + 40))
+        return polygon
 
     # perspective projection
     @staticmethod
     def perspective_projection(vertices):
-        coords = np.empty((0, 2))
+        polygon = QPolygonF()
         a = 200
 
         for vertex in vertices:
-            coords = np.vstack((coords, np.array([a * vertex[0] / (vertex[2] + a) + 50,
-                                                  a * vertex[1] / (vertex[2] + a) + 50])))
-
-        print(coords)
-        return coords
+            polygon.append(QPointF(vertex[0] / (vertex[2] / a + 1) + 50,
+                                   vertex[1] / (vertex[2] / a + 1) + 50))
+        return polygon
 
 
 # class to quickly create basic objects
