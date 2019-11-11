@@ -15,13 +15,15 @@ class VolumetricObject:
         self.polygons = np.empty((0, 4), dtype=int)  # numbers in self.polygons represent indices in self.vertices
         self.numOfVertices = 0
         self.numOfPolygons = 0
+        self.color = np.empty((0,3),dtype = int)
 
     def add_vertex(self, x, y, z):
         self.vertices = np.vstack((self.vertices, np.array([x, y, z])))
         self.numOfVertices += 1
 
-    def add_polygon(self, arr):
+    def add_polygon(self, arr,col):
         self.polygons = np.vstack((self.polygons, arr))
+        self.color = np.vstack((self.color, (col[0], col[1], col[2])))
         self.numOfPolygons += 1
 
 
@@ -42,22 +44,48 @@ class Modeling:
     def add_object(self, obj):
         self.objects.append(obj)
         self.draw()  # redraw whole scene
-        self.timer.start(25)
+        self.timer.start(20)
 
 
     # draws all objects to self.img
     def draw(self):
+        myPoly = []
+        cols = []
         for obj in self.objects:
             for polygon in obj.polygons:
-                vertices = obj.vertices[polygon - 1]  # vertices of current polygon
-                # proj_pol = self.oblique_projection(vertices)  # projected polygon QPolygonF
+                myPoly.append( ( polygon, min(self.objects[0].vertices[polygon - 1] [2]) ) )
+            for color in obj.color:
+                cols.append(color)
 
-                # 2nd param is where the eye looks at,3rd param is where the eye is
-                proj_pol = self.central_projection(vertices,(0, 0, 70), (10, 50, 0))
-                #proj_pol = self.perspective_projection(vertices)
+        temp = [x[1] for x in myPoly]
+        #myPoly = sorted(myPoly, key=lambda poly: poly[1] )
+        #cols = sorted(cols,key = lambda poly: poly[1])
+        a = zip(temp,cols,myPoly)
+        a = sorted(a, key=lambda lem: lem[0])
+        cols = [x[1] for x in a]
+        myPoly = [x[2] for x in a]
 
-                # self.painter.setBrush(QBrush(Qt.SolidPattern))  # brush to color polygon of object
-                self.painter.drawPolygon(proj_pol)
+        #myPoly.reverse()
+        #i = 0
+        for i in range(len(myPoly)):
+            vertices = self.objects[0].vertices[myPoly[i][0] - 1]  # vertices of current polygon
+            # proj_pol = self.oblique_projection(vertices)  # projected polygon QPolygonF
+
+            # 2nd param is where the eye looks at,3rd param is where the eye is
+            proj_pol = self.central_projection(vertices,(0, 0, 70), (10, 50, 0))
+
+
+            path = QPainterPath()
+            path.addPolygon(proj_pol)
+            self.painter.setBrush(QColor(cols[i][0],cols[i][1],cols[i][2]))
+            self.painter.setPen(QPen(QColor(cols[i][0],cols[i][1],cols[i][2]),1,Qt.SolidLine))
+            #i = i+1
+            #proj_pol = self.perspective_projection(vertices)
+
+            # self.painter.setBrush(QBrush(Qt.SolidPattern))  # brush to color polygon of object
+            self.painter.drawPath(path)
+            self.painter.drawPolygon(proj_pol)
+        #i = 0
         # sets pixmap for new scene
         self.painter.end()
         self.display.setPixmap(QPixmap.fromImage(self.img))
@@ -150,27 +178,33 @@ class TemplateObjects:
         obj.add_vertex(50, 50, 50)
         obj.add_vertex(50, -50, 50)
 
-        obj.add_polygon(np.array([1, 2, 3, 4]))
-        obj.add_polygon(np.array([1, 4, 8, 5]))
-        obj.add_polygon(np.array([1, 2, 6, 5]))
-        obj.add_polygon(np.array([5, 6, 7, 8]))
-        obj.add_polygon(np.array([3, 4, 8, 7]))
-        obj.add_polygon(np.array([2, 3, 7, 6]))
+
+        obj.add_polygon(np.array([1, 2, 3, 4]),64+np.random.choice(range(128), size = 3) )
+        obj.add_polygon(np.array([1, 4, 8, 5]),64+np.random.choice(range(128), size = 3))
+        obj.add_polygon(np.array([1, 2, 6, 5]),64+np.random.choice(range(128), size = 3))
+        obj.add_polygon(np.array([5, 6, 7, 8]),64+np.random.choice(range(128), size = 3))
+        obj.add_polygon(np.array([3, 4, 8, 7]),64+np.random.choice(range(128), size = 3))
+        obj.add_polygon(np.array([2, 3, 7, 6]),64+np.random.choice(range(128), size = 3))
+
+        # for val in obj.vertices:
+        #     obj.add_vertex(val[0]*0.3,val[1]*0.3,val[2] *0.3)
+        # for val in obj.polygons:
+        #     obj.add_polygon(val+8)
         return obj
 
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
-    sys._excepthook = sys.excepthook
-
-
-    def exception_hook(exctype, value, traceback):
-        print(exctype, value, traceback)
-        sys._excepthook(exctype, value, traceback)
-        sys.exit(1)
-
-
-    sys.excepthook = exception_hook
+    # sys._excepthook = sys.excepthook
+    #
+    #
+    # def exception_hook(exctype, value, traceback):
+    #     print(exctype, value, traceback)
+    #     sys._excepthook(exctype, value, traceback)
+    #     sys.exit(1)
+    #
+    #
+    # sys.excepthook = exception_hook
 
     templates = TemplateObjects
     cube = templates.create_standard_cube()
