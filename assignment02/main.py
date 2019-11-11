@@ -35,26 +35,42 @@ class Modeling:
 
         self.display.setPixmap(QPixmap.fromImage(self.img))
         self.display.show()
+        self.timer = QTimer()
+        self.timer.timeout.connect(self.animation)
 
     # adds object to scene
     def add_object(self, obj):
         self.objects.append(obj)
         self.draw()  # redraw whole scene
+        self.timer.start(1000)
 
     # draws all objects to self.img
     def draw(self):
         for obj in self.objects:
             for polygon in obj.polygons:
                 vertices = obj.vertices[polygon - 1]  # vertices of current polygon
-                #proj_pol = self.oblique_projection(vertices)  # projected polygon QPolygonF
-                proj_pol = self.central_projection(vertices,(50,50,100),(10,50, 0));        #2nd param is where the eye looks at,3rd param is where the eye is
-                #proj_pol = self.perspective_projection(vertices)
+                # proj_pol = self.oblique_projection(vertices)  # projected polygon QPolygonF
+
+                # 2nd param is where the eye looks at,3rd param is where the eye is
+                # proj_pol = self.central_projection(vertices,(50, 50, 100), (10, 50, 0))
+                proj_pol = self.perspective_projection(vertices)
 
                 # self.painter.setBrush(QBrush(Qt.SolidPattern))  # brush to color polygon of object
                 self.painter.drawPolygon(proj_pol)
         # sets pixmap for new scene
         self.display.setPixmap(QPixmap.fromImage(self.img))
         self.display.show()
+
+    def rotate(self):
+        phi = -0.2342
+        rotation_matrix_x = np.array([[1, 0, 0], [0, np.cos(phi), -np.sin(phi)], [0, np.sin(phi), np.cos(phi)]])
+
+        for obj in self.objects:
+            obj.vertices = obj.vertices.dot(rotation_matrix_x)
+        self.draw()
+
+    def animation(self):
+        self.rotate()
 
     # oblique projection as described in explanation no. 2
     @staticmethod
@@ -71,7 +87,7 @@ class Modeling:
     @staticmethod
     def perspective_projection(vertices):
         polygon = QPolygonF()
-        viewer = (50,15,-200)
+        viewer = (50, 15, -200)
         a = 200
 
         for vertex in vertices:
@@ -119,7 +135,7 @@ class TemplateObjects:
         obj.add_vertex(0, 0, 0)
         obj.add_vertex(0, 100, 0)
         obj.add_vertex(100, 100, 0)
-        obj.add_vertex(125, 0, 0)
+        obj.add_vertex(100, 0, 0)
         obj.add_vertex(0, 0, 100)
         obj.add_vertex(0, 100, 100)
         obj.add_vertex(100, 100, 100)
