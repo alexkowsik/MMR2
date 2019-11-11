@@ -42,7 +42,8 @@ class Modeling:
     def add_object(self, obj):
         self.objects.append(obj)
         self.draw()  # redraw whole scene
-        self.timer.start(1000)
+        self.timer.start(25)
+
 
     # draws all objects to self.img
     def draw(self):
@@ -52,21 +53,25 @@ class Modeling:
                 # proj_pol = self.oblique_projection(vertices)  # projected polygon QPolygonF
 
                 # 2nd param is where the eye looks at,3rd param is where the eye is
-                # proj_pol = self.central_projection(vertices,(50, 50, 100), (10, 50, 0))
-                proj_pol = self.perspective_projection(vertices)
+                proj_pol = self.central_projection(vertices,(0, 0, 70), (10, 50, 0))
+                #proj_pol = self.perspective_projection(vertices)
 
                 # self.painter.setBrush(QBrush(Qt.SolidPattern))  # brush to color polygon of object
                 self.painter.drawPolygon(proj_pol)
         # sets pixmap for new scene
+        self.painter.end()
         self.display.setPixmap(QPixmap.fromImage(self.img))
         self.display.show()
 
     def rotate(self):
-        phi = -0.2342
-        rotation_matrix_x = np.array([[1, 0, 0], [0, np.cos(phi), -np.sin(phi)], [0, np.sin(phi), np.cos(phi)]])
+        phi = 3.14/64
+        rotation_matrix_x = np.array([[np.cos(phi), 0, np.sin(phi)], [0, 1, 0], [-np.sin(phi), 0, np.cos(phi)]])
+
 
         for obj in self.objects:
             obj.vertices = obj.vertices.dot(rotation_matrix_x)
+        self.img = QImage(WIDTH, HEIGHT, QImage.Format_RGBA8888)
+        self.painter = QPainter(self.img)
         self.draw()
 
     def animation(self):
@@ -104,7 +109,11 @@ class Modeling:
         #datatype of Centralpoint and viewPoint are tuple :(x,y,z) , where x,y,z are coordinates
         normVec = np.asarray((centralPoint[0],centralPoint[1], np.abs(centralPoint[2]-viewPoint[2]) ),dtype=float)  #"bildtafel" is always in x-y-plane
         newBase = np.asarray((np.asarray((1,0,0)),np.asarray((0,1,0)),normVec))
-
+        # phi = -0.2342
+        # rotation_matrix_x = np.array([[np.cos(phi), 0, np.sin(phi)], [0, 1, 0], [np.sin(phi), 0, np.cos(phi)]])
+        # print(newBase)
+        # newBase = newBase.dot(rotation_matrix_x)
+        # print(newBase)
         newBase /= np.sqrt(np.sum(newBase[0]**2)+
                            np.sum(newBase[1]**2)+
                            np.sum(np.power(newBase[2] , 2))
@@ -132,14 +141,14 @@ class TemplateObjects:
     def create_standard_cube():
         obj = VolumetricObject()
 
-        obj.add_vertex(0, 0, 0)
-        obj.add_vertex(0, 100, 0)
-        obj.add_vertex(100, 100, 0)
-        obj.add_vertex(100, 0, 0)
-        obj.add_vertex(0, 0, 100)
-        obj.add_vertex(0, 100, 100)
-        obj.add_vertex(100, 100, 100)
-        obj.add_vertex(100, 0, 100)
+        obj.add_vertex(-50, -50, -25)
+        obj.add_vertex(-50, 50, -50)
+        obj.add_vertex(50, 50, -50)
+        obj.add_vertex(50, -80, -50)
+        obj.add_vertex(-50, -50, 50)
+        obj.add_vertex(-50, 50, 50)
+        obj.add_vertex(50, 50, 50)
+        obj.add_vertex(50, -50, 50)
 
         obj.add_polygon(np.array([1, 2, 3, 4]))
         obj.add_polygon(np.array([1, 4, 8, 5]))
@@ -152,6 +161,16 @@ class TemplateObjects:
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
+    sys._excepthook = sys.excepthook
+
+
+    def exception_hook(exctype, value, traceback):
+        print(exctype, value, traceback)
+        sys._excepthook(exctype, value, traceback)
+        sys.exit(1)
+
+
+    sys.excepthook = exception_hook
 
     templates = TemplateObjects
     cube = templates.create_standard_cube()
