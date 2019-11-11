@@ -49,6 +49,7 @@ class Modeling:
                 proj_pol = self.oblique_projection(vertices)  # projected polygon QPolygonF
                 # proj_pol = self.perspective_projection(vertices)
 
+                # self.painter.setBrush(QBrush(Qt.SolidPattern))  # brush to color polygon of object
                 self.painter.drawPolygon(proj_pol)
         # sets pixmap for new scene
         self.display.setPixmap(QPixmap.fromImage(self.img))
