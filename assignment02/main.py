@@ -3,15 +3,16 @@ import numpy as np
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 from PyQt5.QtCore import *
-import plyfile
-
-WIDTH, HEIGHT = 600, 600
 
 
+WIDTH, HEIGHT = 200, 200
+
+
+# nothing changed
 class VolumetricObject:
 
     def __init__(self):
-        self.vertices = np.empty((0, 3), dtype=int)  # vertex is list [x, y, z]
+        self.vertices = np.empty((0, 3), dtype=float)  # vertex is list [x, y, z]
         self.polygons = np.empty((0, 3), dtype=int)  # numbers in self.polygons represent indices in self.vertices
         self.numOfVertices = 0
         self.numOfPolygons = 0
@@ -27,6 +28,7 @@ class VolumetricObject:
         self.numOfPolygons += 1
 
 
+# removed projection functions, added raytracing and intersection_test
 class Modeling:
 
     def __init__(self):
@@ -34,25 +36,22 @@ class Modeling:
         self.img = QImage(WIDTH, HEIGHT, QImage.Format_RGBA8888)
         self.painter = QPainter(self.img)
         self.objects = list()  # holds all objects in scene
-
         self.display.setPixmap(QPixmap.fromImage(self.img))
         self.display.show()
-        self.timer = QTimer()
-        self.timer.timeout.connect(self.animation)
 
     # adds object to scene
     def add_object(self, obj):
         self.objects.append(obj)
-        self.draw()  # redraw whole scene
-        self.timer.start(20)
+        # self.draw()  # redraw whole scene
 
     # draws all objects to self.img
     def draw(self):
+        self.img.fill(Qt.white)
         myPoly = []
         cols = []
         for obj in self.objects:
             for polygon in obj.polygons:
-                myPoly.append((polygon, sum([x[2] for x in self.objects[0].vertices[polygon - 1]])))
+                myPoly.append((polygon, sum([x[2] for x in self.objects[0].vertices[polygon]])))
             for color in obj.color:
                 cols.append(color)
 
@@ -65,63 +64,86 @@ class Modeling:
         # myPoly.reverse()
         # i = 0
         for i in range(len(myPoly)):
-            vertices = self.objects[0].vertices[myPoly[i][0] - 1]  # vertices of current polygon
+            vertices = self.objects[0].vertices[myPoly[i][0]]  # vertices of current polygon
             # proj_pol = self.oblique_projection(vertices)  # projected polygon QPolygonF
 
             # 2nd param is where the eye looks at,3rd param is where the eye is
-            proj_pol = self.central_projection(vertices, (0, 0, 150), (10, 50, 0))
+            proj_pol = self.central_projection(vertices, (0, 0, 0), (0, 0, -10))
 
             # proj_pol = self.perspective_projection(vertices)
             path = QPainterPath()
             path.addPolygon(proj_pol)
             self.painter.setBrush(QColor(cols[i][0], cols[i][1], cols[i][2]))
             self.painter.setPen(QPen(QColor(cols[i][0], cols[i][1], cols[i][2]), 1, Qt.SolidLine))
-            # i = i+1
 
-            # self.painter.setBrush(QBrush(Qt.SolidPattern))  # brush to color polygon of object
+            self.painter.setBrush(QBrush(QColor(cols[i][0], cols[i][1], cols[i][2]), Qt.SolidPattern))  # brush to color polygon of object
             self.painter.drawPath(path)
             self.painter.drawPolygon(proj_pol)
+
         # i = 0
         # sets pixmap for new scene
-        self.painter.end()
+        # self.painter.end()
+        self.display.setPixmap(QPixmap.fromImage(self.img))
+
+        # test if there is any intersection
+        # for i in range(-50, 20):
+        #     for j in range(-50, 20):
+        #         if self.intersection_test(np.array([i, j, 0]), np.array([0, 0, -1])):
+        #             print("Yay", i, j)
+        #             break
+        self.display.show()
+
+    def raytracing(self):
+        for i in range(-50, 150):
+            for j in range(-50, 150):
+                col = self.intersection_test(np.array([i, j, 0]), np.array([0, 0, -1]))
+                self.painter.setPen(QColor(col[0], col[1], col[2]))
+                self.painter.drawPoint(i + 80, j + 80)
+        print("finished raytracing")
         self.display.setPixmap(QPixmap.fromImage(self.img))
         self.display.show()
 
-    def rotate(self):
-        phi = 3.14 / 64
-        rotation_matrix_x = np.array([[np.cos(phi), 0, np.sin(phi)], [0, 1, 0], [-np.sin(phi), 0, np.cos(phi)]])
-
+    # p0 is the support vector of the line, dir_vec is the direction vector.
+    # goes over every triangle in all objects and tests for intersection.
+    # returns True/False by now, can easily be modified to return color of intersected triangle
+    def intersection_test(self, p0, dir_vec):
         for obj in self.objects:
-            obj.vertices = obj.vertices.dot(rotation_matrix_x)
-        self.img = QImage(WIDTH, HEIGHT, QImage.Format_RGBA8888)
-        self.painter = QPainter(self.img)
-        self.draw()
+            for (index, triangle) in enumerate(obj.polygons):
+                vertices = obj.vertices[triangle]
 
-    def animation(self):
-        self.rotate()
+                # u, v are direction vectors of the plane which belongs to the triangle
+                u = vertices[1] - vertices[0]
+                v = vertices[2] - vertices[0]
+                cross = np.cross(v, u)
+                vec_length = np.linalg.norm(np.cross(u, v))
+                norm_vec = cross / vec_length  # norm vector of the plane/triangle
 
-    # oblique projection as described in explanation no. 2
-    @staticmethod
-    def oblique_projection(vertices):
-        polygon = QPolygonF()
+                p1 = p0 + 300 * dir_vec  # distant point on line (has to be behind all objects)
 
-        # factor 10 instead of 2 for better visual and +60/+40 to center the object on the image
-        for vertex in vertices:
-            polygon.append(QPointF(vertex[0] - 0.5 * np.sqrt(10 * vertex[2]) + 60,
-                                   vertex[1] + 0.5 * np.sqrt(10 * vertex[2]) + 40))
-        return polygon
+                # if line is parallel to plane, continue
+                if np.dot(norm_vec, p0 - p1) == 0:
+                    print("tis ting zero")
+                    continue
+                c = np.dot(norm_vec, p0 - vertices[0]) / np.dot(norm_vec, p0 - p1)
+                S = p0 + c * (p0 - p1)  # intersection point of line with plane
 
-    # perspective projection
-    @staticmethod
-    def perspective_projection(vertices):
-        polygon = QPolygonF()
-        viewer = (50, 15, -200)
-        a = 200
+                # now check if intersection point is inside the triangle (should be right, trust...)
+                # basically you solve for s and t in w = s*u + t*v
+                # see here for reference: http://geomalgorithms.com/a06-_intersect-2.html
+                w = S - vertices[0]
 
-        for vertex in vertices:
-            polygon.append(QPointF(vertex[0] + viewer[0] / (vertex[2] - viewer[2] / a + 1) + 60,
-                                   vertex[1] + viewer[1] / (vertex[2] - viewer[2] / a + 1) + 40))
-        return polygon
+                s = (np.dot(np.dot(u, v), np.dot(w, v)) - np.dot(np.dot(v, v), np.dot(w, u))) \
+                    / (np.dot(u, v) ** 2 - np.dot(np.dot(u, u), np.dot(v, v)))
+                t = (np.dot(np.dot(u, v), np.dot(w, u)) - np.dot(np.dot(u, u), np.dot(w, v))) \
+                    / (np.dot(u, v) ** 2 - np.dot(np.dot(u, u), np.dot(v, v)))
+
+                # this condition needs rework
+                if s < 0 or t < 0 or s+t > 1:
+                    # print("nope, not in triangle", s, t)
+                    continue
+                else:
+                    return obj.color[index]
+        return np.array([0, 0, 0])
 
     @staticmethod
     def central_projection(vertices, centralPoint, viewPoint):
@@ -153,71 +175,51 @@ class Modeling:
             newZ = np.sum((vertex - centralPoint) * newBase[2])
 
             # transforming 3d data in displayable 2d data
-
             polygon.append(QPointF(175 * newX / (1 - newZ / normVec[2]) + WIDTH / 2,
                                    175 * newY / (1 - newZ / normVec[2]) + HEIGHT / 2))
         return polygon
 
 
-# class to quickly create basic objects
+# modelled cube differently and changed polygons to triangles
 class TemplateObjects:
 
     @staticmethod
     def create_standard_cube():
         obj = VolumetricObject()
 
-        obj.add_vertex(-50, -50, -50)
-        obj.add_vertex(-50, 50, -50)
-        obj.add_vertex(50, 50, -50)
-        obj.add_vertex(50, -50, -50)
-        obj.add_vertex(-50, -50, 50)
-        obj.add_vertex(-50, 50, 50)
-        obj.add_vertex(50, 50, 50)
-        obj.add_vertex(50, -50, 50)
+        obj.add_vertex(-35, -7.5, -100)
+        obj.add_vertex(-31.5, -25, -90)
+        obj.add_vertex(-26.1, -14.4, -73.35)
+        obj.add_vertex(-29.6, 3.1, -83.35)
+        obj.add_vertex(-15.6, -7.3, -106.45)
+        obj.add_vertex(-12.1, -24.8, -96.45)
+        obj.add_vertex(-6.65, -14.2, -79.8)
+        obj.add_vertex(-10.15, 3.3, -89.8)
 
-        obj.add_polygon(np.array([1, 2, 3, 4]), 64 + np.random.choice(range(128), size=3))
-        obj.add_polygon(np.array([1, 4, 8, 5]), 64 + np.random.choice(range(128), size=3))
-        obj.add_polygon(np.array([1, 2, 6, 5]), 64 + np.random.choice(range(128), size=3))
-        obj.add_polygon(np.array([5, 6, 7, 8]), 64 + np.random.choice(range(128), size=3))
-        obj.add_polygon(np.array([3, 4, 8, 7]), 64 + np.random.choice(range(128), size=3))
-        obj.add_polygon(np.array([2, 3, 7, 6]), 64 + np.random.choice(range(128), size=3))
+        obj.add_polygon(np.array([0, 1, 2]), 64 + np.random.choice(range(128), size=3))
+        obj.add_polygon(np.array([0, 2, 3]), 64 + np.random.choice(range(128), size=3))
+        obj.add_polygon(np.array([0, 3, 7]), 64 + np.random.choice(range(128), size=3))
+        obj.add_polygon(np.array([0, 7, 4]), 64 + np.random.choice(range(128), size=3))
+        obj.add_polygon(np.array([0, 1, 5]), 64 + np.random.choice(range(128), size=3))
+        obj.add_polygon(np.array([0, 5, 4]), 64 + np.random.choice(range(128), size=3))
+        obj.add_polygon(np.array([4, 5, 6]), 64 + np.random.choice(range(128), size=3))
+        obj.add_polygon(np.array([4, 6, 7]), 64 + np.random.choice(range(128), size=3))
+        obj.add_polygon(np.array([2, 3, 7]), 64 + np.random.choice(range(128), size=3))
+        obj.add_polygon(np.array([2, 7, 6]), 64 + np.random.choice(range(128), size=3))
+        obj.add_polygon(np.array([1, 2, 6]), 64 + np.random.choice(range(128), size=3))
+        obj.add_polygon(np.array([1, 6, 5]), 64 + np.random.choice(range(128), size=3))
 
-        # hidden box!
-        for val in obj.vertices:
-            obj.add_vertex(val[0] * 0.3, val[1] * 0.3, val[2] * 0.3)
-        for val in obj.polygons:
-            obj.add_polygon(val + 8, 64 + np.random.choice(range(128), size=3))
         return obj
-
-
-def drill():
-    file = plyfile.PlyData.read("drill_shaft_vrip.ply");
-    obj = VolumetricObject()
-    for x in file['vertex']:
-        obj.add_vertex(x[0] * 10000, x[1] * 1000, x[2] * 10000)
-    for x in file['face']:
-        obj.add_polygon(x[0], np.random.choice(range(64), size=3))
-    return obj
 
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
-    # sys._excepthook = sys.excepthook
-    #
-    #
-    # def exception_hook(exctype, value, traceback):
-    #     print(exctype, value, traceback)
-    #     sys._excepthook(exctype, value, traceback)
-    #     sys.exit(1)
-    #
-    #
-    # sys.excepthook = exception_hook
 
-    # templates = TemplateObjects
-    # cube = templates.create_standard_cube()
+    templates = TemplateObjects
+    cube = templates.create_standard_cube()
     M = Modeling()
-    M.add_object(drill())
+    M.add_object(cube)
+    # M.draw()
+    M.raytracing()
 
     app.exec()
-    ##Change polygon size in the beginning
-    ## change the param of Modeling  instance
