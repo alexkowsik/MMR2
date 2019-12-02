@@ -1,8 +1,9 @@
 import sys
+
 import numpy as np
-from PyQt5.QtWidgets import *
-from PyQt5.QtGui import *
 from PyQt5.QtCore import *
+from PyQt5.QtGui import *
+from PyQt5.QtWidgets import *
 
 
 WIDTH, HEIGHT = 200, 200
@@ -12,8 +13,10 @@ WIDTH, HEIGHT = 200, 200
 class VolumetricObject:
 
     def __init__(self):
-        self.vertices = np.empty((0, 3), dtype=float)  # vertex is list [x, y, z]
-        self.polygons = np.empty((0, 3), dtype=int)  # numbers in self.polygons represent indices in self.vertices
+        # vertex is list [x, y, z]
+        self.vertices = np.empty((0, 3), dtype=float)
+        # numbers in self.polygons represent indices in self.vertices
+        self.polygons = np.empty((0, 3), dtype=int)
         self.numOfVertices = 0
         self.numOfPolygons = 0
         self.color = np.empty((0, 3), dtype=int)
@@ -51,7 +54,8 @@ class Modeling:
         cols = []
         for obj in self.objects:
             for polygon in obj.polygons:
-                myPoly.append((polygon, sum([x[2] for x in self.objects[0].vertices[polygon]])))
+                myPoly.append(
+                    (polygon, sum([x[2] for x in self.objects[0].vertices[polygon]])))
             for color in obj.color:
                 cols.append(color)
 
@@ -64,19 +68,24 @@ class Modeling:
         # myPoly.reverse()
         # i = 0
         for i in range(len(myPoly)):
-            vertices = self.objects[0].vertices[myPoly[i][0]]  # vertices of current polygon
+            # vertices of current polygon
+            vertices = self.objects[0].vertices[myPoly[i][0]]
             # proj_pol = self.oblique_projection(vertices)  # projected polygon QPolygonF
 
             # 2nd param is where the eye looks at,3rd param is where the eye is
-            proj_pol = self.central_projection(vertices, (0, 0, 0), (0, 0, -10))
+            proj_pol = self.central_projection(
+                vertices, (0, 0, 0), (0, 0, -10))
 
             # proj_pol = self.perspective_projection(vertices)
             path = QPainterPath()
             path.addPolygon(proj_pol)
             self.painter.setBrush(QColor(cols[i][0], cols[i][1], cols[i][2]))
-            self.painter.setPen(QPen(QColor(cols[i][0], cols[i][1], cols[i][2]), 1, Qt.SolidLine))
+            self.painter.setPen(
+                QPen(QColor(cols[i][0], cols[i][1], cols[i][2]), 1, Qt.SolidLine))
 
-            self.painter.setBrush(QBrush(QColor(cols[i][0], cols[i][1], cols[i][2]), Qt.SolidPattern))  # brush to color polygon of object
+            # brush to color polygon of object
+            self.painter.setBrush(
+                QBrush(QColor(cols[i][0], cols[i][1], cols[i][2]), Qt.SolidPattern))
             self.painter.drawPath(path)
             self.painter.drawPolygon(proj_pol)
 
@@ -94,9 +103,10 @@ class Modeling:
         self.display.show()
 
     def raytracing(self):
-        for i in range(-50, 150):
-            for j in range(-50, 150):
-                col = self.intersection_test(np.array([i, j, 0]), np.array([0, 0, -1]))
+        for i in range(-80, 120):
+            for j in range(-80, 120):
+                col = self.intersection_test(
+                    np.array([i, j, 0]), np.array([0, 0, -1]))
                 self.painter.setPen(QColor(col[0], col[1], col[2]))
                 self.painter.drawPoint(i + 80, j + 80)
         print("finished raytracing")
@@ -118,13 +128,15 @@ class Modeling:
                 vec_length = np.linalg.norm(np.cross(u, v))
                 norm_vec = cross / vec_length  # norm vector of the plane/triangle
 
-                p1 = p0 + 300 * dir_vec  # distant point on line (has to be behind all objects)
+                # distant point on line (has to be behind all objects)
+                p1 = p0 + 300 * dir_vec
 
                 # if line is parallel to plane, continue
                 if np.dot(norm_vec, p0 - p1) == 0:
                     print("tis ting zero")
                     continue
-                c = np.dot(norm_vec, p0 - vertices[0]) / np.dot(norm_vec, p0 - p1)
+                c = np.dot(norm_vec, p0 -
+                           vertices[0]) / np.dot(norm_vec, p0 - p1)
                 S = p0 + c * (p0 - p1)  # intersection point of line with plane
 
                 # now check if intersection point is inside the triangle (should be right, trust...)
@@ -154,7 +166,8 @@ class Modeling:
         # datatype of Centralpoint and viewPoint are tuple :(x,y,z) , where x,y,z are coordinates
         normVec = np.asarray((centralPoint[0], centralPoint[1], np.abs(centralPoint[2] - viewPoint[2])),
                              dtype=float)  # "bildtafel" is always in x-y-plane
-        newBase = np.asarray((np.asarray((1, 0, 0)), np.asarray((0, 1, 0)), normVec))
+        newBase = np.asarray(
+            (np.asarray((1, 0, 0)), np.asarray((0, 1, 0)), normVec))
         # phi = -0.2342
         # rotation_matrix_x = np.array([[np.cos(phi), 0, np.sin(phi)], [0, 1, 0], [np.sin(phi), 0, np.cos(phi)]])
         # print(newBase)
@@ -196,18 +209,30 @@ class TemplateObjects:
         obj.add_vertex(-6.65, -14.2, -79.8)
         obj.add_vertex(-10.15, 3.3, -89.8)
 
-        obj.add_polygon(np.array([0, 1, 2]), 64 + np.random.choice(range(128), size=3))
-        obj.add_polygon(np.array([0, 2, 3]), 64 + np.random.choice(range(128), size=3))
-        obj.add_polygon(np.array([0, 3, 7]), 64 + np.random.choice(range(128), size=3))
-        obj.add_polygon(np.array([0, 7, 4]), 64 + np.random.choice(range(128), size=3))
-        obj.add_polygon(np.array([0, 1, 5]), 64 + np.random.choice(range(128), size=3))
-        obj.add_polygon(np.array([0, 5, 4]), 64 + np.random.choice(range(128), size=3))
-        obj.add_polygon(np.array([4, 5, 6]), 64 + np.random.choice(range(128), size=3))
-        obj.add_polygon(np.array([4, 6, 7]), 64 + np.random.choice(range(128), size=3))
-        obj.add_polygon(np.array([2, 3, 7]), 64 + np.random.choice(range(128), size=3))
-        obj.add_polygon(np.array([2, 7, 6]), 64 + np.random.choice(range(128), size=3))
-        obj.add_polygon(np.array([1, 2, 6]), 64 + np.random.choice(range(128), size=3))
-        obj.add_polygon(np.array([1, 6, 5]), 64 + np.random.choice(range(128), size=3))
+        obj.add_polygon(np.array([0, 1, 2]), 64 +
+                        np.random.choice(range(128), size=3))
+        obj.add_polygon(np.array([0, 2, 3]), 64 +
+                        np.random.choice(range(128), size=3))
+        obj.add_polygon(np.array([0, 3, 7]), 64 +
+                        np.random.choice(range(128), size=3))
+        obj.add_polygon(np.array([0, 7, 4]), 64 +
+                        np.random.choice(range(128), size=3))
+        obj.add_polygon(np.array([0, 1, 5]), 64 +
+                        np.random.choice(range(128), size=3))
+        obj.add_polygon(np.array([0, 5, 4]), 64 +
+                        np.random.choice(range(128), size=3))
+        obj.add_polygon(np.array([4, 5, 6]), 64 +
+                        np.random.choice(range(128), size=3))
+        obj.add_polygon(np.array([4, 6, 7]), 64 +
+                        np.random.choice(range(128), size=3))
+        obj.add_polygon(np.array([2, 3, 7]), 64 +
+                        np.random.choice(range(128), size=3))
+        obj.add_polygon(np.array([2, 7, 6]), 64 +
+                        np.random.choice(range(128), size=3))
+        obj.add_polygon(np.array([1, 2, 6]), 64 +
+                        np.random.choice(range(128), size=3))
+        obj.add_polygon(np.array([1, 6, 5]), 64 +
+                        np.random.choice(range(128), size=3))
 
         return obj
 
@@ -220,6 +245,8 @@ if __name__ == '__main__':
     M = Modeling()
     M.add_object(cube)
     # M.draw()
+
+    print("Hello World")
     M.raytracing()
 
     app.exec()
