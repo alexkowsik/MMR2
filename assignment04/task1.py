@@ -62,7 +62,7 @@ def b_spline_with_points(x, points):
     return res_x, res_y
 
 
-class Interpolation():
+class Interpolation:
 
     def __init__(self):
         self.display = QLabel()
@@ -76,8 +76,6 @@ class Interpolation():
         self.x = np.linspace(0, 4, 501)
 
     def drawPoint(self, x, y):
-        print(self.points, self.points_drawn)
-
         if self.points_drawn == 0:
             self.img.fill(0)
 
