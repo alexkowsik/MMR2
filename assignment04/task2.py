@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 WIDTH, HEIGTH = 800, 800
 
 
-class FourierBase(QWidget):
+class FourierBase():
 
     def __init__(self):
         self.display = QLabel()
@@ -31,7 +31,7 @@ class FourierBase(QWidget):
         self.length = None  # length of drawn curve (number of x values)
         self.lambda_sin = []  # holds coefficients lambda_sin
         self.lambda_cos = []  # holds coefficients lambda_cos
-        self.f_dach = []  # y values of approximated function
+        self.approximated_function = []  # y values of approximated function
 
     def fourier_transformation(self):
         print("starting fourier transformation")
@@ -40,7 +40,7 @@ class FourierBase(QWidget):
         self.compute_approximated_function()
 
         print("finished fourier transformation")
-        self.draw_f_dach()
+        self.draw_approximated_function()
 
     def compute_coefficients(self):
         for m in range(self.length):
@@ -58,12 +58,12 @@ class FourierBase(QWidget):
 
     def compute_approximated_function(self):
         for i in range(self.length):
-            self.f_dach.append(0)
+            self.approximated_function.append(0)
 
             for m in range(self.length):
-                self.f_dach[i] += self.lambda_sin[m] * \
+                self.approximated_function[i] += self.lambda_sin[m] * \
                     np.sin(m * (2 * np.pi * i / self.length)) * (1 / (m + 1))
-                self.f_dach[i] += self.lambda_cos[m] * \
+                self.approximated_function[i] += self.lambda_cos[m] * \
                     np.cos(m * (2 * np.pi * i / self.length)) * (1 / (m + 1))
 
     # stores all the y values of drawn curve in fx
@@ -79,15 +79,15 @@ class FourierBase(QWidget):
                     break
         self.length = self.end_index - self.start_index
 
-    def draw_f_dach(self):
+    def draw_approximated_function(self):
         self.painter.setPen(QPen(Qt.red, 3))
 
         mid_fx = self.fx[self.length // 2]
-        mid_fdach = self.f_dach[self.length // 2]
+        mid_fdach = self.approximated_function[self.length // 2]
 
         for i in range(self.length):
             self.painter.drawPoint(self.start_index + i,
-                                   self.f_dach[i] - mid_fdach + mid_fx)
+                                   self.approximated_function[i] - mid_fdach + mid_fx)
 
         self.display.setPixmap(QPixmap.fromImage(self.img))
         self.display.show()
@@ -100,7 +100,7 @@ class FourierBase(QWidget):
         self.fx = []
         self.lambda_sin = []
         self.lambda_cos = []
-        self.f_dach = []
+        self.approximated_function = []
         self.start_index = None
         self.end_index = None
         self.length = None
