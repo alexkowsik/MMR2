@@ -40,31 +40,29 @@ class FourierBase(QWidget):
         start = 0
         end = 2 * np.pi
 
-        length = self.end_index - self.start_index
-
         # compute all the coefficients
-        for m in range(length):
+        for m in range(self.length):
             l_sin = 0
             l_cos = 0
 
-            for i in range(length):
-                l_sin += np.sin(m * (2 * np.pi * i / length)) * \
+            for i in range(self.length):
+                l_sin += np.sin(m * (2 * np.pi * i / self.length)) * \
                     self.fx[i]
-                l_cos += np.cos(m * (2 * np.pi * i / length)) * \
+                l_cos += np.cos(m * (2 * np.pi * i / self.length)) * \
                     self.fx[i]
 
-            self.lambda_sin.append(2 * np.pi * l_sin / length)
-            self.lambda_cos.append(2 * np.pi * l_cos / length)
+            self.lambda_sin.append(2 * np.pi * l_sin / self.length)
+            self.lambda_cos.append(2 * np.pi * l_cos / self.length)
 
         # compute the y values (f "Dach")
-        for i in range(length):
+        for i in range(self.length):
             self.f_dach.append(0)
 
-            for m in range(length):
+            for m in range(self.length):
                 self.f_dach[i] += self.lambda_sin[m] * \
-                    np.sin(m * (2 * np.pi * i / length))
+                    np.sin(m * (2 * np.pi * i / self.length))
                 self.f_dach[i] += self.lambda_cos[m] * \
-                    np.cos(m * (2 * np.pi * i / length))
+                    np.cos(m * (2 * np.pi * i / self.length))
 
         print(self.f_dach)
 
