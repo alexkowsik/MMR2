@@ -60,9 +60,9 @@ class FourierBase(QWidget):
 
             for m in range(self.length):
                 self.f_dach[i] += self.lambda_sin[m] * \
-                    np.sin(m * (2 * np.pi * i / self.length))
+                    np.sin(m * (2 * np.pi * i / self.length)) * (1 / (m + 1))
                 self.f_dach[i] += self.lambda_cos[m] * \
-                    np.cos(m * (2 * np.pi * i / self.length))
+                    np.cos(m * (2 * np.pi * i / self.length)) * (1 / (m + 1))
 
         print(self.f_dach)
 
