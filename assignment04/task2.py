@@ -87,7 +87,7 @@ class FourierBase(QWidget):
         self.painter.setPen(QPen(Qt.red, 3))
 
         for i in range(self.length):
-            self.painter.drawPoint(self.start_index + i, self.f_dach[i] % 500)
+            self.painter.drawPoint(self.start_index + i, self.f_dach[i] % 800)
 
         self.display.setPixmap(QPixmap.fromImage(self.img))
         self.display.show()
