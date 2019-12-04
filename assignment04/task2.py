@@ -4,6 +4,7 @@ import numpy as np
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
+import matplotlib.pyplot as plt
 
 
 WIDTH, HEIGTH = 800, 800
@@ -24,68 +25,69 @@ class FourierBase(QWidget):
         self.display.mousePressEvent = self.mouse_press
         self.display.mouseMoveEvent = self.mouse_move
         self.display.mouseReleaseEvent = self.mouse_release
-        self.fx = [None] * WIDTH
-        self.lambda_sin = []
-        self.lambda_cos = []
-        self.f_dach = []
+        self.fx = []  # holds the y values of drawn curve f
+        self.start_index = None  # index where drawn curve starts
+        self.end_index = None  # index where drawn curve ends
+        self.length = None  # length of drawn curve (number of x values)
+        self.lambda_sin = []  # holds coefficients lambda_sin
+        self.lambda_cos = []  # holds coefficients lambda_cos
+        self.f_dach = []  # y values of approximated function
 
     def fourier_transformation(self):
         print("starting fourier transformation")
-        start = None
-        start_actual = None
-        end = None
-        end_actual = None
-        length = None
 
-        for x, f_x in enumerate(self.fx):
-            if f_x is not None:
-                start_actual = x + 1
-                start = 2 * np.pi / start_actual
-                break
+        # start and end from descrete interval on which to evaluate
+        start = 0
+        end = 2 * np.pi
 
-        for x, f_x in enumerate(self.fx[start_actual:]):
-            if f_x is None:
-                end_actual = start_actual + x - 1
-                end = 2 * np.pi / end_actual
-                break
-
-        length = end_actual - start_actual
-
-        for i in range(length):
+        # compute all the coefficients
+        for m in range(self.length):
             l_sin = 0
             l_cos = 0
 
-            for i in range(length):
-                l_sin += np.sin(i * (start + i / length)) * \
-                    self.fx[start_actual + i]
-                l_cos += np.cos(i * (start + i / length)) * \
-                    self.fx[start_actual + i]
+            for i in range(self.length):
+                l_sin += np.sin(m * (2 * np.pi * i / self.length)) * \
+                    self.fx[i]
+                l_cos += np.cos(m * (2 * np.pi * i / self.length)) * \
+                    self.fx[i]
 
-            self.lambda_sin.append(2 * np.pi * l_sin / length)
-            self.lambda_cos.append(2 * np.pi * l_cos / length)
+            self.lambda_sin.append(2 * np.pi * l_sin / self.length)
+            self.lambda_cos.append(2 * np.pi * l_cos / self.length)
 
-        for i in range(length):
+        # compute the y values (f "Dach")
+        for i in range(self.length):
             self.f_dach.append(0)
 
-            for m in range(length):
-                self.f_dach[i] += self.lambda_sin[m] * np.sin(m * i)
-                self.f_dach[i] += self.lambda_cos[m] * np.cos(m * i)
+            for m in range(self.length):
+                self.f_dach[i] += self.lambda_sin[m] * \
+                    np.sin(m * (2 * np.pi * i / self.length))
+                self.f_dach[i] += self.lambda_cos[m] * \
+                    np.cos(m * (2 * np.pi * i / self.length))
+
+        print(self.f_dach)
 
         print("finished fourier transformation")
-        self.draw_f_dach(start_actual, end_actual)
+        self.draw_f_dach()
 
+    # stores all the y values of drawn curve in fx
+    # also the start and end of the curve (indices)
     def read_curve_from_img(self):
         for i in range(WIDTH):
             for j in range(HEIGTH):
                 if self.img.pixel(i, j):
-                    self.fx[i] = j
+                    if self.start_index is None:
+                        self.start_index = i
+                    self.fx.append(j)
+                    self.end_index = i
                     break
+        self.length = self.end_index - self.start_index
+        print(self.fx)
 
-    def draw_f_dach(self, start, end):
-        self.painter.setPen(QPen(Qt.red, 1))
+    def draw_f_dach(self):
+        self.painter.setPen(QPen(Qt.red, 3))
 
-        for i in range(start, end):
-            self.painter.drawPoint(i, self.f_dach[i - start])
+        for i in range(self.length):
+            self.painter.drawPoint(self.start_index + i, self.f_dach[i] % 500)
 
         self.display.setPixmap(QPixmap.fromImage(self.img))
         self.display.show()
@@ -102,10 +104,13 @@ class FourierBase(QWidget):
         self.img.fill(0)
         self.display.setPixmap(QPixmap.fromImage(self.img))
         self.display.show()
-        self.fx = [None] * WIDTH
+        self.fx = []
         self.lambda_sin = []
         self.lambda_cos = []
         self.f_dach = []
+        self.start_index = None
+        self.end_index = None
+        self.length = None
 
     def mouse_press(self, event):
         if event.buttons() == Qt.LeftButton:
