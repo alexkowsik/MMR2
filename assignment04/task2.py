@@ -36,11 +36,13 @@ class FourierBase(QWidget):
     def fourier_transformation(self):
         print("starting fourier transformation")
 
-        # start and end from descrete interval on which to evaluate
-        start = 0
-        end = 2 * np.pi
+        self.compute_coefficients()
+        self.compute_approximated_function()
 
-        # compute all the coefficients
+        print("finished fourier transformation")
+        self.draw_f_dach()
+
+    def compute_coefficients(self):
         for m in range(self.length):
             l_sin = 0
             l_cos = 0
@@ -54,7 +56,7 @@ class FourierBase(QWidget):
             self.lambda_sin.append(2 * np.pi * l_sin / self.length)
             self.lambda_cos.append(2 * np.pi * l_cos / self.length)
 
-        # compute the y values (f "Dach")
+    def compute_approximated_function(self):
         for i in range(self.length):
             self.f_dach.append(0)
 
@@ -63,11 +65,6 @@ class FourierBase(QWidget):
                     np.sin(m * (2 * np.pi * i / self.length)) * (1 / (m + 1))
                 self.f_dach[i] += self.lambda_cos[m] * \
                     np.cos(m * (2 * np.pi * i / self.length)) * (1 / (m + 1))
-
-        print(self.f_dach)
-
-        print("finished fourier transformation")
-        self.draw_f_dach()
 
     # stores all the y values of drawn curve in fx
     # also the start and end of the curve (indices)
@@ -81,15 +78,12 @@ class FourierBase(QWidget):
                     self.end_index = i
                     break
         self.length = self.end_index - self.start_index
-        print(self.fx)
 
     def draw_f_dach(self):
         self.painter.setPen(QPen(Qt.red, 3))
 
         mid_fx = self.fx[self.length // 2]
         mid_fdach = self.f_dach[self.length // 2]
-
-        print(mid_fdach - mid_fx, mid_fdach)
 
         for i in range(self.length):
             self.painter.drawPoint(self.start_index + i,
@@ -98,13 +92,6 @@ class FourierBase(QWidget):
         self.display.setPixmap(QPixmap.fromImage(self.img))
         self.display.show()
         print("finished drawing")
-
-    def draw_line_to(self, p):
-        self.painter.setPen(QPen(Qt.black, 1))
-        self.painter.drawLine(self.last_point, p)
-        self.last_point = p
-        self.display.setPixmap(QPixmap.fromImage(self.img))
-        self.display.show()
 
     def reset(self):
         self.img.fill(0)
@@ -117,6 +104,13 @@ class FourierBase(QWidget):
         self.start_index = None
         self.end_index = None
         self.length = None
+
+    def draw_line_to(self, p):
+        self.painter.setPen(QPen(Qt.black, 1))
+        self.painter.drawLine(self.last_point, p)
+        self.last_point = p
+        self.display.setPixmap(QPixmap.fromImage(self.img))
+        self.display.show()
 
     def mouse_press(self, event):
         if event.buttons() == Qt.LeftButton:
