@@ -73,7 +73,7 @@ class Interpolation():
         self.display.mousePressEvent = self.mouse_press
         self.points = []
         self.points_drawn = 0
-        self.x = np.linspace(0, 5, 501)
+        self.x = np.linspace(0, 4, 501)
 
     def drawPoint(self, x, y):
         print(self.points, self.points_drawn)
@@ -86,7 +86,7 @@ class Interpolation():
         self.painter.setPen(QPen(Qt.black, 10))
         self.painter.drawPoint(x, y)
 
-        if self.points_drawn == 4:
+        if self.points_drawn == 8:
             self.draw_function()
 
         self.display.setPixmap(QPixmap.fromImage(self.img))
@@ -95,16 +95,16 @@ class Interpolation():
     def draw_function(self):
         points = []
 
-        for i in range(4):
-            px = 5 * self.points[i][0] / WIDTH
-            py = 5 * self.points[i][1] / HEIGTH
+        for i in range(8):
+            px = 4 * self.points[i][0] / WIDTH
+            py = 4 * self.points[i][1] / HEIGTH
             points.append([px, py])
 
         fx, fy = b_spline_with_points(self.x, points)
 
         self.painter.setPen(QPen(Qt.black, 3))
         for i in range(len(fx) - 1):
-            self.painter.drawPoint(fx[i] * WIDTH / 5, fy[i] * HEIGTH / 5)
+            self.painter.drawPoint(fx[i] * WIDTH / 4, fy[i] * HEIGTH / 4)
 
         self.display.setPixmap(QPixmap.fromImage(self.img))
         self.display.show()
@@ -119,7 +119,7 @@ class Interpolation():
 if __name__ == '__main__':
     app = QApplication(sys.argv)
     x = np.linspace(0, 5, 501)
-    i = 1
+    i = 2
 
     # plot Gaussian Function
     # plt.plot(x, 0.564 * np.exp(-(x - i)**2))
