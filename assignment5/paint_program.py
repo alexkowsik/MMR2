@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 #Params
 
 WIDTH, HEIGTH = 800, 800
-num_segments = 3
+num_segments = 17
 
 #this implements the drawing program, that copies what is drawn in a segment and repeats it across all other
 #segments.
