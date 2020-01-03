@@ -5,7 +5,7 @@ from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
 import matplotlib.pyplot as plt
-from random import *
+import random
 
 # Params
 
@@ -15,56 +15,104 @@ WIDTH, HEIGTH = 1000, 1000
 class Recognition():
 
     def __init__(self):
-        seed()
-        self.image1 = QPixmap('a.jpg')
-        self.image2 = QPixmap('b.jpg')
-
-        self.t1 = QLabel()
-        self.t1.setPixmap(self.image1)
-
-        self.t2 = QLabel()
-        self.t2.setPixmap(self.image2)
-
+        random.seed()
+        self. n = 4
         self.patches = []
-        self.patches.append(self.t1)
-        self.patches.append(self.t2)
-
-
-        #create a layout and add images to it
-
+        self.distinct = True
+        w = 41
+        v = 41
+        src = 'test.png'
+        self.naive_patch_compare(src, w, v)
 
         self.widget = QWidget()
         self.widget.keyPressEvent = self.keyPressEvent
         self.box = QHBoxLayout()
 
-        for image in self.patches:
-            self.box.addWidget(image)
+        source = QPixmap(src)
+        self.labels = []
+        if not self.distinct:
+            if not (len(self.patches) < self.n):
+                for i in range (self.n):
+                    rect = QRect(self.patches[i][0][0]*w, self.patches[i][0][1]*v ,w,v)
+                    cur = source.copy(rect)
+                    self.labels.append(QLabel())
+                    self.labels[-1].setPixmap(cur)
+        else:
+            if not (len(self.patches) < self.n):
+                rect = QRect(self.patches[0][0][0] * w, self.patches[0][0][1] * v, w, v)
+                cur = source.copy(rect)
+                img = cur.toImage()
+                run_rect = QRect(self.patches[1][0][0] * w, self.patches[1][0][1] * v, w, v)
+                run_cur = source.copy(run_rect)
+                run_img = run_cur.toImage()
+                i = 0
+                j = 1
+                self.lbl = QLabel()
+                self.lbl.setPixmap(cur)
+                self.labels.append(self.lbl)
+                while(i < self.n and j < len(self.patches)):
+                    j += 1
+                    if run_img == img:
+                        run_rect = QRect(self.patches[j][0][0] * w, self.patches[j][0][1] * v, w, v)
+                        run_cur = source.copy(run_rect)
+                        run_img = run_cur.toImage()
+                    else:
+                        i += 1
+                        img = run_img
+
+                        self.labels.append(QLabel())
+                        self.labels[-1].setPixmap(run_cur)
+                        run_rect = QRect(self.patches[j][0][0] * w, self.patches[j][0][1] * v, w, v)
+                        run_cur = source.copy(run_rect)
+                        run_img = run_cur.toImage()
+        for i in range(self.n):
+            self.box.addWidget(self.labels[i])
 
         self.widget.setLayout(self.box)
-        #self.widget.show()
-
-    #####
-        self.naive_patch_compare('test.png',25,25)
+        self.widget.show()
 
 
 
 
 
 
+    #be careful to choose fitting w,v
     def naive_patch_compare(self,tar,w,v):
+        self.flag = True
         self.source = QPixmap(tar)
-        r1 = random()
-        r2 = random()
-        self.patch_x = (r1 * self.source.width()) // w
-        self.patch_y = (r2 * self.source.height()) // v
-        self.patch_rect = QRect(self.patch_x*w,self.patch_y*v,w,v)
-        self.patch = self.source.copy(self.patch_rect)
-        self.t1 = QLabel()
-        self.t2 = QLabel()
-        self.t1.setPixmap(self.source)
-        self.t2.setPixmap(self.patch)
-        self.t1.show()
-        self.t2.show()
+
+        available_patches = []
+        for i in range(self.source.width() // w):
+            for j in range(self.source.height() // v):
+                available_patches.append((i,j))
+
+        for x in range((self.source.width()//w) * (self.source.height()//v)):
+            choice = random.choice(available_patches)
+            available_patches.remove(choice)
+
+            self.patch_rect = QRect(choice[0] * w, choice[1] * v, w, v)
+            self.patch = self.source.copy(self.patch_rect)
+            self.patch_image = self.patch.toImage()
+            hits = 0
+            for i in range(self.source.width()//w):
+                for j in range(self.source.height()//v):
+                    self.rect = QRect(i*w,j*v,w,v)
+                    self.cur = self.source.copy(self.rect)
+                    self.image = self.cur.toImage()
+                    #from the Qimage documentation: "Returns true if this image and the given image have the same contents;
+                    # otherwise returns false"
+                    if self.image == self.patch_image:
+                        hits = hits+1
+
+            self.patches.append( ((choice[0],choice[1]),hits-1) )
+            print(100*(x+1)/((self.source.width()//w) * (self.source.height()//v)),"% done")
+            QCoreApplication.processEvents()
+            if self.flag == False:
+                self.evaluate_naive_patch_compare()
+                return
+
+
+        self.evaluate_naive_patch_compare()
 
 
     def mouse_press(self, event):
@@ -79,8 +127,11 @@ class Recognition():
     def keyPressEvent(self,event):
         if event.key() == Qt.Key_S:
             print("ok")
+            self.flag = False
 
-
+    def evaluate_naive_patch_compare(self):
+        self.patches = sorted(self.patches,key=lambda x:x[1],reverse = True)
+        print(self.patches)
 
 
 if __name__ == '__main__':
