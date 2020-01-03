@@ -16,57 +16,20 @@ class Recognition():
 
     def __init__(self):
         random.seed()
-        self. n = 4
-        self.patches = []
-        self.distinct = True
-        w = 41
-        v = 41
-        src = 'test.png'
-        self.naive_patch_compare(src, w, v)
+        self. n = 4             #number of pictures to be shown after the evaluation
+        self.patches = []       #the patches, to be stored as ((x_index,y_index),number of matches)
+                                #index = pixel of the source image // (w or v)
+        self.distinct = True    #when True, show the top n distinct images
+        self.w = 41                  #width of the patches
+        self.v = 41                  #height of the patches
+        self.src = 'test.png'        #source image
+        self.naive_patch_compare(self.src, self.w, self.v)
 
-        self.widget = QWidget()
-        self.widget.keyPressEvent = self.keyPressEvent
+        self.widget = QWidget() #our form of representation
+        self.widget.keyPressEvent = self.keyPressEvent  #press S to interrup the calculations and get a result
         self.box = QHBoxLayout()
 
-        source = QPixmap(src)
-        self.labels = []
-        if not self.distinct:
-            if not (len(self.patches) < self.n):
-                for i in range (self.n):
-                    rect = QRect(self.patches[i][0][0]*w, self.patches[i][0][1]*v ,w,v)
-                    cur = source.copy(rect)
-                    self.labels.append(QLabel())
-                    self.labels[-1].setPixmap(cur)
-        else:
-            if not (len(self.patches) < self.n):
-                rect = QRect(self.patches[0][0][0] * w, self.patches[0][0][1] * v, w, v)
-                cur = source.copy(rect)
-                img = cur.toImage()
-                run_rect = QRect(self.patches[1][0][0] * w, self.patches[1][0][1] * v, w, v)
-                run_cur = source.copy(run_rect)
-                run_img = run_cur.toImage()
-                i = 0
-                j = 1
-                self.lbl = QLabel()
-                self.lbl.setPixmap(cur)
-                self.labels.append(self.lbl)
-                while(i < self.n and j < len(self.patches)):
-                    j += 1
-                    if run_img == img:
-                        run_rect = QRect(self.patches[j][0][0] * w, self.patches[j][0][1] * v, w, v)
-                        run_cur = source.copy(run_rect)
-                        run_img = run_cur.toImage()
-                    else:
-                        i += 1
-                        img = run_img
-
-                        self.labels.append(QLabel())
-                        self.labels[-1].setPixmap(run_cur)
-                        run_rect = QRect(self.patches[j][0][0] * w, self.patches[j][0][1] * v, w, v)
-                        run_cur = source.copy(run_rect)
-                        run_img = run_cur.toImage()
-        for i in range(self.n):
-            self.box.addWidget(self.labels[i])
+        self.choose_top_patches()
 
         self.widget.setLayout(self.box)
         self.widget.show()
@@ -133,6 +96,47 @@ class Recognition():
         self.patches = sorted(self.patches,key=lambda x:x[1],reverse = True)
         print(self.patches)
 
+    def choose_top_patches(self):
+        #this chooses the top n patches from the evaluation
+        source = QPixmap(self.src)
+        self.labels = []
+        if not self.distinct:
+            if not (len(self.patches) < self.n):
+                for i in range(self.n):
+                    rect = QRect(self.patches[i][0][0] * self.w, self.patches[i][0][1] * self.v, self.w, self.v)
+                    cur = source.copy(rect)
+                    self.labels.append(QLabel())
+                    self.labels[-1].setPixmap(cur)
+        else:
+            if not (len(self.patches) < self.n):
+                rect = QRect(self.patches[0][0][0] * self.w, self.patches[0][0][1] * self.v, self.w, self.v)
+                cur = source.copy(rect)
+                img = cur.toImage()
+                run_rect = QRect(self.patches[1][0][0] * self.w, self.patches[1][0][1] * self.v, self.w, self.v)
+                run_cur = source.copy(run_rect)
+                run_img = run_cur.toImage()
+                i = 0
+                j = 1
+                self.lbl = QLabel()
+                self.lbl.setPixmap(cur)
+                self.labels.append(self.lbl)
+                while (i < self.n and j < len(self.patches)):
+                    j += 1
+                    if run_img == img:
+                        run_rect = QRect(self.patches[j][0][0] * self.w, self.patches[j][0][1] * self.v, self.w, self.v)
+                        run_cur = source.copy(run_rect)
+                        run_img = run_cur.toImage()
+                    else:
+                        i += 1
+                        img = run_img
+
+                        self.labels.append(QLabel())
+                        self.labels[-1].setPixmap(run_cur)
+                        run_rect = QRect(self.patches[j][0][0] * self.w, self.patches[j][0][1] * self.v, self.w, self.v)
+                        run_cur = source.copy(run_rect)
+                        run_img = run_cur.toImage()
+        for i in range(self.n):
+            self.box.addWidget(self.labels[i])
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)

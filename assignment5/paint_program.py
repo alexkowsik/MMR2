@@ -8,8 +8,8 @@ import matplotlib.pyplot as plt
 
 #Params
 
-WIDTH, HEIGTH = 800, 800
-num_segments = 17
+WIDTH, HEIGTH = 1000, 1000
+num_segments = 15
 
 #this implements the drawing program, that copies what is drawn in a segment and repeats it across all other
 #segments.
@@ -26,19 +26,20 @@ class Crystal():
         self.display.show()
         self.mouse_drawing = False
         self.last_point = None
-        ################################################################################
+
+        #this code makes lines from the center. The angles between the lines are all equal
         self.painter.setPen(QPen(Qt.black, 2))
         if num_segments > 1:
             for k in range (1,num_segments+1):
-                self.painter.drawLine(QPoint(WIDTH / 2, HEIGTH / 2), QPoint(400+np.cos((k*2*np.pi)/num_segments)*HEIGTH,
-                                                                        400+np.sin((k*-2*np.pi)/num_segments)*WIDTH))
+                self.painter.drawLine(QPoint(WIDTH / 2, HEIGTH / 2), QPoint(WIDTH/2+np.cos((k*2*np.pi)/num_segments)*HEIGTH,
+                                                                        HEIGTH/2+np.sin((k*-2*np.pi)/num_segments)*WIDTH))
 
 
 
 
         self.display.setPixmap(QPixmap.fromImage(self.img))
         self.display.show()
-        ################################################################################
+
         self.display.mousePressEvent = self.mouse_press
         self.display.mouseMoveEvent = self.mouse_move
         self.display.mouseReleaseEvent = self.mouse_release
@@ -50,16 +51,18 @@ class Crystal():
 
 
     def draw_line_to(self, p):
+        #this function draws a line in all segments. The frist line is between the 2nd-last and last position
+        #of the mouse: the other lines are the same, but rotated into the other segments using a rotationmatrix
         self.painter.setPen(QPen(Qt.black, 1))
         x_old = WIDTH/2 -self.last_point.x()
         y_old = HEIGTH/2 -self.last_point.y()
-        x = 400-p.x()
+        x = WIDTH/2-p.x()
         y = HEIGTH/2-p.y()
         for k in range(1,num_segments+1):
-            target_x =  WIDTH/2+np.cos(np.pi+k*2*np.pi/num_segments) *x + -np.sin(np.pi+k*2*np.pi/num_segments)*y #-400
-            target_y = HEIGTH/2+np.sin(np.pi+k*2*np.pi/num_segments) *x + np.cos(np.pi+k*2*np.pi/num_segments)*y #-400
-            source_x =  WIDTH/2+np.cos(np.pi+k*2*np.pi/num_segments) *x_old + -np.sin(np.pi+k*2*np.pi/num_segments)*y_old #-400
-            source_y = HEIGTH/2+np.sin(np.pi+k*2*np.pi/num_segments) *x_old + np.cos(np.pi+k*2*np.pi/num_segments)*y_old #-400
+            target_x =  WIDTH/2+np.cos(np.pi+k*2*np.pi/num_segments) *x + -np.sin(np.pi+k*2*np.pi/num_segments)*y
+            target_y = HEIGTH/2+np.sin(np.pi+k*2*np.pi/num_segments) *x + np.cos(np.pi+k*2*np.pi/num_segments)*y
+            source_x =  WIDTH/2+np.cos(np.pi+k*2*np.pi/num_segments) *x_old + -np.sin(np.pi+k*2*np.pi/num_segments)*y_old
+            source_y = HEIGTH/2+np.sin(np.pi+k*2*np.pi/num_segments) *x_old + np.cos(np.pi+k*2*np.pi/num_segments)*y_old
             self.painter.drawLine(QPoint(source_x,source_y),QPoint(target_x,target_y))
             self.display.setPixmap(QPixmap.fromImage(self.img))
             self.display.show()
