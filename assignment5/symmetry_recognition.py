@@ -44,20 +44,20 @@ class Recognition():
         #self.widget.show()
 
     #####
-        self.naive_patch_compare('test.png',6)
+        self.naive_patch_compare('test.png',25,25)
 
 
 
 
 
 
-    def naive_patch_compare(self,tar,w):
+    def naive_patch_compare(self,tar,w,v):
         self.source = QPixmap(tar)
         r1 = random()
         r2 = random()
         self.patch_x = (r1 * self.source.width()) // w
-        self.patch_y = (r2 * self.source.height()) // w
-        self.patch_rect = QRect(self.patch_x*w,self.patch_y*w,self.patch_x*(w+1),self.patch_y*(w+1))
+        self.patch_y = (r2 * self.source.height()) // v
+        self.patch_rect = QRect(self.patch_x*w,self.patch_y*v,w,v)
         self.patch = self.source.copy(self.patch_rect)
         self.t1 = QLabel()
         self.t2 = QLabel()
@@ -65,10 +65,7 @@ class Recognition():
         self.t2.setPixmap(self.patch)
         self.t1.show()
         self.t2.show()
-        print(self.source.size())
-        print(self.patch.size())
-        print(r1 * self.source.width() , " ", r2 * self.source.height())
-        print(self.patch_x, " ",self.patch_y)
+
 
     def mouse_press(self, event):
         pass
