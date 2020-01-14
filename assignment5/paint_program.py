@@ -23,9 +23,13 @@ class Crystal():
         self.painter = QPainter(self.img)
         self.display.setPixmap(QPixmap.fromImage(self.img))
         self.display.setFixedSize(WIDTH, HEIGTH)
+        self.colors = [Qt.black, Qt.green, Qt.red, Qt.cyan, Qt.blue]
+        self.cur_color = self.colors[0]
+        self.color_index = 0
         self.display.show()
         self.mouse_drawing = False
         self.last_point = None
+        self.display.keyPressEvent = self.keyPressEvent
 
         #this code makes lines from the center. The angles between the lines are all equal
         self.painter.setPen(QPen(Qt.black, 2))
@@ -53,7 +57,7 @@ class Crystal():
     def draw_line_to(self, p):
         #this function draws a line in all segments. The frist line is between the 2nd-last and last position
         #of the mouse: the other lines are the same, but rotated into the other segments using a rotationmatrix
-        self.painter.setPen(QPen(Qt.black, 1))
+        self.painter.setPen(QPen(self.cur_color, 1))
         x_old = WIDTH/2 -self.last_point.x()
         y_old = HEIGTH/2 -self.last_point.y()
         x = WIDTH/2-p.x()
@@ -86,6 +90,12 @@ class Crystal():
         if self.mouse_drawing:
             self.draw_line_to(event.pos())
             self.mouse_drawing = False
+
+    def keyPressEvent(self, event):
+        if event.key() == Qt.Key_C:
+            self.color_index += 1
+            self.cur_color = self.colors[(self.color_index) % len(self.colors)]
+
 
 
 
