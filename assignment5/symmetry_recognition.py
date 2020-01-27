@@ -22,13 +22,13 @@ class Recognition():
                                 #index = pixel of the source image // (w or v)
         self.distinct = False    #when True, show the top n distinct patches
         self.eval_mode = 1      #0 for hits, 1 for distances with numpy, 2 for distances with qImage.pixel(x,y)
-        self.w = 16  # width of the patches
-        self.v = 16  # height of the patches
-        self.precision_scaling = 0.45
+        self.w = 100  # width of the patches #25 or 30 good
+        self.v = 100  # height of the patches
+        self.precision_scaling = 0.45  # 0.45 is okay
         self.colors = [Qt.cyan, Qt.gray, Qt.green, Qt.magenta, Qt.red, Qt.blue, Qt.yellow, Qt.darkBlue, Qt.darkCyan
             , Qt.darkGreen, Qt.darkMagenta, Qt.darkRed, Qt.darkYellow]
         self.colors_index = 0
-        self.src = 'test.png'  #source image
+        self.src = 'test2.png'  #source image
 
         self.btn = QPushButton("Press to Stop")
         self.btn.setText("Press to Stop")
