@@ -39,6 +39,13 @@ class Pos:
     def distance(self):
         return self.x + self.y
 
+    def __mul__(self, other):
+        return Pos(self.x * other, self.y * other)
+
+    def __eq__(self, other):
+        if self.x == other.x and self.y == other.y:
+            return True
+
 class Game:
     class GameField:
         def copy(self, other):
@@ -248,7 +255,7 @@ class Game:
             self.gamesCompleted += self.topLeft.move(right)
 
         if event.key() == Qt.Key_R:
-            self.automaticSolving(2)
+            self.automaticSolving(2, self.topRight, self.topLeft)
 
         if self.gamesCompleted == 4:
             self.uwon += 1
@@ -277,84 +284,109 @@ class Game:
                 temp.copy(arg[i])
                 temp.playerPos = temp.playerPos + tempdict[j]
                 temp.boxPos = temp.boxPos + tempdict[j]
-                if not Game.is_possible(temp):
+                if not Game.is_possible(temp) or temp.field[temp.playerPos.x][temp.playerPos.y] == black:
                     graphstates = []
-                    print("detected that i dont go this way")
+                    print("detected that box or player cant go this way")
                     continue
                 # new player pos, new boxpos, distance fom box to goal
-                try:
-                    graphstates.append((tempdict[j] + arg[i].playerPos, tempdict[j] + arg[i].boxPos,
-                                        (tempdict[j] + arg[i].boxPos - arg[i].goal).distance()))
-                except Exception:
-                    traceback.print_exc()
-            graph.append(graphstates)
 
+                graphstates.append((tempdict[j] + arg[i].playerPos, tempdict[j] + arg[i].boxPos,
+                                    (tempdict[j] + arg[i].boxPos - arg[i].goal).distance()))
+            if len(graphstates) != 0:
+                graph.append(graphstates)
             graphstates = []
         return graph
 
-    def automaticSolving(self, numgraphs):
-        graph = self.makeLocalGraph(numgraphs, self.topLeft, self.topRight)
+    def automaticSolving(self, numGames, *arg):
+        tempdict = {
+            up: Pos(-1, 0),
+            down: Pos(1, 0),
+            left: Pos(0, -1),
+            right: Pos(0, 1)
+        }
+        graph = self.makeLocalGraph(numGames, *arg)
+        print(graph)
         distances = []
         for direction in graph:
             for i in range(1, len(direction)):
                 distances.append((direction[0], direction[i][2]))
         distances = sorted(distances, key=(lambda x: x[1]), reverse=False)
-        print(distances)
-        self.topLeft.move(distances[0][0])
-        self.topRight.move(distances[0][0])
-        self.botLeft.move(distances[0][0])
-        self.botRight.move(distances[0][0])
 
-    def is_possible(game):
-        x, y = game.boxPos.x, game.boxPos.y
+        for direction in distances:
+            for i in range(numGames):
+                # if player isnt behind the box regarding the optimal path
+                if arg[i].playerPos == tempdict[direction[0]] - arg[i].boxPos:
+                    print("got here")
+                    return self.shoveBox(direction[0])
+                else:
+                    # self.walkBehindBox()
+                    pass
+
+    def walkBehindBox(self, numgraphs, distances):
+
+        tempdict = {
+            up: Pos(-1, 0),
+            down: Pos(1, 0),
+            left: Pos(0, -1),
+            right: Pos(0, 1)
+        }
+
+    def shoveBox(self, direction):
+        self.topLeft.move(direction)
+        self.topRight.move(direction)
+        self.botLeft.move(direction)
+        self.botRight.move(direction)
+
+    def is_possible(currentGame):
+        x, y = currentGame.boxPos.x, currentGame.boxPos.y
 
         # False on win
-        if game.boxPos == game.target:
+        if currentGame.boxPos == currentGame.target:
             return False
 
         # False if box is in a corner
         if y - 1 >= 0:
-            if game.field[x][y - 1] == black:
+            if currentGame.field[x][y - 1] == black:
                 if x + 1 < N and x - 1 >= 0:
-                    if game.field[x + 1][y] == black or game.field[x - 1][y] == black:
+                    if currentGame.field[x + 1][y] == black or currentGame.field[x - 1][y] == black:
                         return False
         if y + 1 < N:
-            if game.field[x][y + 1] == black:
+            if currentGame.field[x][y + 1] == black:
                 if x + 1 < N and x - 1 >= 0:
-                    if game.field[x + 1][y] == black or game.field[x - 1][y] == black:
+                    if currentGame.field[x + 1][y] == black or currentGame.field[x - 1][y] == black:
                         return False
 
         # True if box is in a tunnel
-        if (game.field[x - 1][y] == game.field[x + 1][y] and game.field[x - 1][y] == black) \
-                or (game.field[x][y - 1] == game.field[x][y - 1] and game.field[x][y + 1] == black):
+        if (currentGame.field[x - 1][y] == currentGame.field[x + 1][y] and currentGame.field[x - 1][y] == black) \
+                or (currentGame.field[x][y - 1] == currentGame.field[x][y - 1] and currentGame.field[x][y + 1] == black):
             return True
 
         # False if box is at a wall and cannot be moved away
-        if game.field[x][y - 1] == black:
-            if sum(row[y - 1] for row in game.field) > N - 2:
+        if currentGame.field[x][y - 1] == black:
+            if sum(row[y - 1] for row in currentGame.field) > N - 2:
                 return False
-        if game.field[x][y + 1] == black:
-            if sum(row[y + 1] for row in game.field) > N - 2:
+        if currentGame.field[x][y + 1] == black:
+            if sum(row[y + 1] for row in currentGame.field) > N - 2:
                 return False
-        if game.field[x - 1][y] == black:
-            if sum(game.field[x - 1]) > N - 2:
+        if currentGame.field[x - 1][y] == black:
+            if sum(currentGame.field[x - 1]) > N - 2:
                 return False
-        if game.field[x + 1][y] == black:
-            if sum(game.field[x + 1]) > N - 2:
+        if currentGame.field[x + 1][y] == black:
+            if sum(currentGame.field[x + 1]) > N - 2:
                 return False
 
         # False if box is at outer wall and target is not on that side
         if y == 1:
-            if game.target.y != 0:
+            if currentGame.target.y != 0:
                 return False
         if y == N - 2:
-            if game.target.y != N - 1:
+            if currentGame.target.y != N - 1:
                 return False
         if x == 1:
-            if game.target.x != 0:
+            if currentGame.target.x != 0:
                 return False
         if x == N - 2:
-            if game.target.x != N - 1:
+            if currentGame.target.x != N - 1:
                 return False
 
         return True
