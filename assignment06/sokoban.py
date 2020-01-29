@@ -28,18 +28,21 @@ class Pos:
     def __str__(self):
         return str(self.x) + " " + str(self.y)
 
+
 class Game:
     class GameField:
         # 0 == free, 1 == Black, 2 == box, 3 == Player
         # setup a playing field
         def __init__(self):
-            self.pixmap = QPixmap(QPixmap.fromImage(QImage(W, H, QImage.Format_RGBA8888)))
+            self.pixmap = QPixmap(QPixmap.fromImage(
+                QImage(W, H, QImage.Format_RGBA8888)))
             self.label = QLabel()
             self.field = np.zeros((N, N))
             self.playerPos = Pos(1, 1)
             self.field[1][1] = player
             self.boxPos = Pos(2, 2)
             self.field[2][2] = box
+            self.target = Pos(6, N-1)
 
             self.moveCounter = 0
             for i in range(N):
@@ -58,18 +61,23 @@ class Game:
             for i in range(N):
                 for j in range(N):
                     if self.field[i][j] == free:
-                        self.painterInstance.setBrush(QBrush(Qt.white, Qt.SolidPattern))
-                        self.painterInstance.drawRect(j * W // N, i * H // N, W // N, H // N)
+                        self.painterInstance.setBrush(
+                            QBrush(Qt.white, Qt.SolidPattern))
+                        self.painterInstance.drawRect(
+                            j * W // N, i * H // N, W // N, H // N)
                     if self.field[i][j] == black:
-                        self.painterInstance.setBrush(QBrush(Qt.black, Qt.SolidPattern))
-                        self.painterInstance.drawRect(j * W // N, i * H // N, W // N, H // N)
+                        self.painterInstance.setBrush(
+                            QBrush(Qt.black, Qt.SolidPattern))
+                        self.painterInstance.drawRect(
+                            j * W // N, i * H // N, W // N, H // N)
 
             self.painterInstance.setBrush(QBrush(Qt.green, Qt.SolidPattern))
             self.painterInstance.drawEllipse(2 + self.playerPos.x * W // N, 2 + self.playerPos.y * H // N,
                                              0.8 * (W // N), 0.8 * (H // N))
 
             self.painterInstance.setBrush(QBrush(Qt.yellow, Qt.SolidPattern))
-            self.painterInstance.drawRect(self.boxPos.x * W // N, self.boxPos.y * H // N, W // N, H // N)
+            self.painterInstance.drawRect(
+                self.boxPos.x * W // N, self.boxPos.y * H // N, W // N, H // N)
             self.painterInstance.drawLine(self.boxPos.x * W // N, self.boxPos.y * H // N, (self.boxPos.x + 1) * W // N,
                                           (self.boxPos.y + 1) * H // N)
             self.painterInstance.drawLine((self.boxPos.x + 1) * W // N, self.boxPos.y * H // N,
@@ -111,17 +119,22 @@ class Game:
                 if self.field[self.playerPos.x + (xDif * 2)][self.playerPos.y + (yDif * 2)] == free:
                     # box kann bewegt werden
                     self.field[self.boxPos.x][self.boxPos.y] = player
-                    self.painterInstance.setBrush(QBrush(Qt.white, Qt.SolidPattern))
-                    self.painterInstance.drawRect(self.boxPos.y * W // N, self.boxPos.x * H // N, W // N, H // N)
-                    self.painterInstance.setBrush(QBrush(Qt.green, Qt.SolidPattern))
+                    self.painterInstance.setBrush(
+                        QBrush(Qt.white, Qt.SolidPattern))
+                    self.painterInstance.drawRect(
+                        self.boxPos.y * W // N, self.boxPos.x * H // N, W // N, H // N)
+                    self.painterInstance.setBrush(
+                        QBrush(Qt.green, Qt.SolidPattern))
                     self.painterInstance.drawEllipse(2 + self.boxPos.y * W // N, 2 + self.boxPos.x * H // N,
                                                      0.8 * (W // N), 0.8 * (H // N))
 
                     self.boxPos.x += xDif
                     self.boxPos.y += yDif
                     self.field[self.boxPos.x][self.boxPos.y] = box
-                    self.painterInstance.setBrush(QBrush(Qt.yellow, Qt.SolidPattern))
-                    self.painterInstance.drawRect(self.boxPos.y * W // N, self.boxPos.x * H // N, W // N, H // N)
+                    self.painterInstance.setBrush(
+                        QBrush(Qt.yellow, Qt.SolidPattern))
+                    self.painterInstance.drawRect(
+                        self.boxPos.y * W // N, self.boxPos.x * H // N, W // N, H // N)
                     self.painterInstance.drawLine(self.boxPos.y * W // N, self.boxPos.x * H // N,
                                                   (self.boxPos.y + 1) * W // N,
                                                   (self.boxPos.x + 1) * H // N)
@@ -130,8 +143,10 @@ class Game:
                                                   (self.boxPos.x + 1) * H // N)
 
                     self.field[self.playerPos.x][self.playerPos.y] = free
-                    self.painterInstance.setBrush(QBrush(Qt.white, Qt.SolidPattern))
-                    self.painterInstance.drawRect(self.playerPos.y * W // N, self.playerPos.x * H // N, W // N, H // N)
+                    self.painterInstance.setBrush(
+                        QBrush(Qt.white, Qt.SolidPattern))
+                    self.painterInstance.drawRect(
+                        self.playerPos.y * W // N, self.playerPos.x * H // N, W // N, H // N)
 
                     self.playerPos.y += yDif
                     self.playerPos.x += xDif
@@ -141,24 +156,78 @@ class Game:
                     pass
             elif (self.field[self.playerPos.x + xDif][self.playerPos.y + yDif] == black):
                 pass
-            elif (self.field[self.playerPos.x + xDif][self.playerPos.y + yDif] == free):  # keine Box im weg
+            # keine Box im weg
+            elif (self.field[self.playerPos.x + xDif][self.playerPos.y + yDif] == free):
                 self.field[self.playerPos.x][self.playerPos.y] = free
-                self.painterInstance.setBrush(QBrush(Qt.white, Qt.SolidPattern))
-                self.painterInstance.drawRect(self.playerPos.y * W // N, self.playerPos.x * H // N, W // N, H // N)
+                self.painterInstance.setBrush(
+                    QBrush(Qt.white, Qt.SolidPattern))
+                self.painterInstance.drawRect(
+                    self.playerPos.y * W // N, self.playerPos.x * H // N, W // N, H // N)
                 self.playerPos.y += yDif
                 self.playerPos.x += xDif
                 self.field[self.playerPos.x][self.playerPos.y] = player
-                self.painterInstance.setBrush(QBrush(Qt.green, Qt.SolidPattern))
+                self.painterInstance.setBrush(
+                    QBrush(Qt.green, Qt.SolidPattern))
                 self.painterInstance.drawEllipse(2 + self.playerPos.y * W // N, 2 + self.playerPos.x * H // N,
                                                  0.8 * (W // N), 0.8 * (H // N))
             self.painterInstance.end()
             self.label.setPixmap(self.pixmap)
 
+            if not self.is_possible():
+                print("Not possible or win")
 
+        def is_possible(self):
+            x, y = self.boxPos.x, self.boxPos.y
 
+            # False on win
+            if self.boxPos == self.target:
+                return False
 
+            # False if box is in a corner
+            if self.field[x][y-1] == black:
+                if self.field[x+1][y] == black or self.field[x-1][y] == black:
+                    return False
+            if self.field[x][y+1] == black:
+                if self.field[x+1][y] == black or self.field[x-1][y] == black:
+                    return False
+
+            # True if box is in a tunnel
+            if (self.field[x-1][y] == self.field[x+1][y] and self.field[x-1][y] == black) \
+                    or (self.field[x][y-1] == self.field[x][y-1] and self.field[x][y+1] == black):
+                return True
+
+            # False if box is at a wall and cannot be moved away
+            if self.field[x][y - 1] == black:
+                if sum(row[y-1] for row in self.field) > N-2:
+                    return False
+            if self.field[x][y + 1] == black:
+                if sum(row[y+1] for row in self.field) > N-2:
+                    return False
+            if self.field[x-1][y] == black:
+                if sum(self.field[x-1]) > N-2:
+                    return False
+            if self.field[x+1][y] == black:
+                if sum(self.field[x+1]) > N-2:
+                    return False
+
+            # False if box is at outer wall and target is not on that side
+            if y == 1:
+                if self.target.y != 0:
+                    return False
+            if y == N-2:
+                if self.target.y != N-1:
+                    return False
+            if x == 1:
+                if self.target.x != 0:
+                    return False
+            if x == N-2:
+                if self.target.x != N-1:
+                    return False
+
+            return True
 
     # ablauf: Setup pix, assign pix to label, add label to layout
+
     def __init__(self):
         self.topLeft = self.GameField()
         self.topRight = self.GameField()
@@ -174,7 +243,8 @@ class Game:
         # self.painterInstance.end()
 
         self.widget = QWidget()  # our form of representation
-        self.widget.keyPressEvent = self.keyPressEvent  # press S to interrupt the calculations and get a result
+        # press S to interrupt the calculations and get a result
+        self.widget.keyPressEvent = self.keyPressEvent
         self.box = QGridLayout()
 
         # add gamefields
