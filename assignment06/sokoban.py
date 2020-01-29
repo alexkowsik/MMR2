@@ -25,14 +25,25 @@ class Pos:
         self.x = a
         self.y = b
 
+    def __sub__(self, other):
+        return Pos(other.x - self.x, other.y - self.y)
+
+    def __add__(self, other):
+        return Pos(other.x + self.x, other.y + self.y)
+
     def __str__(self):
-        return str(self.x) + " " + str(self.y)
+        return str(self.y) + " " + str(self.x)
+
+    def distance(self):
+        return self.x + self.y
+
 
 class Game:
     class GameField:
         # 0 == free, 1 == Black, 2 == box, 3 == Player
         # setup a playing field
         def __init__(self):
+
             self.pixmap = QPixmap(QPixmap.fromImage(QImage(W, H, QImage.Format_RGBA8888)))
             self.label = QLabel()
             self.field = np.zeros((N, N))
@@ -40,6 +51,7 @@ class Game:
             self.field[1][1] = player
             self.boxPos = Pos(2, 2)
             self.field[2][2] = box
+            self.goal = 0
 
             self.moveCounter = 0
             for i in range(N):
@@ -49,6 +61,8 @@ class Game:
                 self.field[i][N - 1] = black
 
             self.field[6][N - 1] = free
+            self.goal = Pos(6, N - 1)
+
 
             # draw shizz
             self.painterInstance = QPainter(self.pixmap)
@@ -81,24 +95,25 @@ class Game:
 
         def move(self, direction):
             # directions = 2: down,6:left,8:up, 4:left
+            flag = 0
             if direction == down:
                 if self.playerPos.x + 1 == N or (self.boxPos.x == self.playerPos.x + 1 and self.playerPos.x + 2 == N):
-                    return
+                    return 0
                 xDif = 1
                 yDif = 0
             if direction == up:
                 if self.playerPos.x - 1 == -1 or (self.boxPos.x == self.playerPos.x - 1 and self.playerPos.x - 2 == -1):
-                    return
+                    return 0
                 xDif = -1
                 yDif = 0
             if direction == left:
                 if self.playerPos.y - 1 == -1 or (self.boxPos.y == self.playerPos.y - 1 and self.playerPos.y - 2 == -1):
-                    return
+                    return 0
                 xDif = 0
                 yDif = -1
             if direction == right:
                 if self.playerPos.y + 1 == N or (self.boxPos.y == self.playerPos.y + 1 and self.playerPos.y + 2 == N):
-                    return
+                    return 0
                 xDif = 0
                 yDif = 1
 
@@ -135,6 +150,8 @@ class Game:
 
                     self.playerPos.y += yDif
                     self.playerPos.x += xDif
+                    if self.boxPos.x == 0 or self.boxPos.x == N - 1 or self.boxPos.y == 0 or self.boxPos.y == N - 1:
+                        flag = 1
 
                 else:
                     # black block im weg; box und spieler bleiben wo sie sind
@@ -153,25 +170,17 @@ class Game:
                                                  0.8 * (W // N), 0.8 * (H // N))
             self.painterInstance.end()
             self.label.setPixmap(self.pixmap)
-
-
-
-
+            return flag
 
     # ablauf: Setup pix, assign pix to label, add label to layout
     def __init__(self):
+        self.gamesCompleted = 0
+        self.uwon = 0
         self.topLeft = self.GameField()
         self.topRight = self.GameField()
         self.botLeft = self.GameField()
         self.botRight = self.GameField()
         self.test = self.topLeft.label
-        # self.painterInstance = QPainter(self.pix)
-        # self.penRectangle = QPen(Qt.cyan)
-        # self.penRectangle.setWidth(1)
-        # self.painterInstance.setBrush(QBrush(Qt.black, Qt.SolidPattern))
-        # self.painterInstance.setPen(self.penRectangle)
-        # self.painterInstance.drawRect(0, 0, 200, 200)
-        # self.painterInstance.end()
 
         self.widget = QWidget()  # our form of representation
         self.widget.keyPressEvent = self.keyPressEvent  # press S to interrupt the calculations and get a result
@@ -187,49 +196,78 @@ class Game:
 
     def keyPressEvent(self, event):
         if event.key() == Qt.Key_S:
-            print("S")
-            self.botRight.move(down)
-            self.topRight.move(down)
-            self.botLeft.move(down)
-            self.topLeft.move(down)
-            # call to func to redraw
-            # self.painterInstance = QPainter(self.topLeft.pixmap)
-            # self.penRectangle = QPen(Qt.black)
-            # self.penRectangle.setWidth(1)
-            # self.painterInstance.setBrush(QBrush(Qt.black, Qt.SolidPattern))
-            # self.painterInstance.setPen(self.penRectangle)
-            # self.painterInstance.drawRect(4 * W // N, 5 * H // N, W // N, H // N)
-            # self.painterInstance.end()
-            # self.topLeft.label.setPixmap(self.topLeft.pixmap)
-            # just need to redraw pix to make change
-            print("P", self.topLeft.playerPos)
-            print("b", self.topLeft.boxPos)
+            self.gamesCompleted += self.botRight.move(down)
+            self.gamesCompleted += self.topRight.move(down)
+            self.gamesCompleted += self.botLeft.move(down)
+            self.gamesCompleted += self.topLeft.move(down)
+
+
         if event.key() == Qt.Key_W:
-            print("W")
-            self.botRight.move(up)
-            self.topRight.move(up)
-            self.botLeft.move(up)
-            self.topLeft.move(up)
-            print("P", self.topLeft.playerPos)
-            print("b", self.topLeft.boxPos)
+            self.gamesCompleted += self.botRight.move(up)
+            self.gamesCompleted += self.topRight.move(up)
+            self.gamesCompleted += self.botLeft.move(up)
+            self.gamesCompleted += self.topLeft.move(up)
 
         if event.key() == Qt.Key_A:
-            print("A")
-            self.botRight.move(left)
-            self.topRight.move(left)
-            self.botLeft.move(left)
-            self.topLeft.move(left)
-            print("P", self.topLeft.playerPos)
-            print("b", self.topLeft.boxPos)
+            self.gamesCompleted += self.botRight.move(left)
+            self.gamesCompleted += self.topRight.move(left)
+            self.gamesCompleted += self.botLeft.move(left)
+            self.gamesCompleted += self.topLeft.move(left)
 
         if event.key() == Qt.Key_D:
-            print("D")
-            self.botRight.move(right)
-            self.topRight.move(right)
-            self.botLeft.move(right)
-            self.topLeft.move(right)
-            print("P", self.topLeft.playerPos)
-            print("b", self.topLeft.boxPos)
+            self.gamesCompleted += self.botRight.move(right)
+            self.gamesCompleted += self.topRight.move(right)
+            self.gamesCompleted += self.botLeft.move(right)
+            self.gamesCompleted += self.topLeft.move(right)
+
+        if event.key() == Qt.Key_R:
+            self.automaticSolving(2)
+
+        if self.gamesCompleted == 4:
+            self.uwon += 1
+            if self.uwon < 20:
+                print("u win")
+            elif self.uwon >= 20 and self.uwon < 40:
+                print("now stop")
+            elif self.uwon >= 40:
+                print("stop")
+
+    def makeLocalGraph(self, lenArg, *arg):
+        # one graph solution, arg is the gamefiled passed
+        graph = []
+        graphstates = []
+        tempdict = {
+            down: Pos(-1, 0),
+            up: Pos(1, 0),
+            right: Pos(0, -1),
+            left: Pos(0, 1)
+        }
+        for j in [up, down, left, right]:
+
+            graphstates.append(j)
+            for i in range(lenArg):
+                # if solvable
+                # new player pos, new boxpos, distance fom box to goal
+                graphstates.append((tempdict[j] + arg[i].playerPos, Pos(-1, 0) + arg[i].boxPos,
+                                    (tempdict[j] + arg[i].boxPos - arg[i].goal).distance()))
+            graph.append(graphstates)
+
+            graphstates = []
+        return graph
+
+    def automaticSolving(self, numgraphs):
+        graph = self.makeLocalGraph(numgraphs, self.topLeft, self.topRight)
+        distances = []
+        for direction in graph:
+            for i in range(1, len(direction)):
+                distances.append((direction[0], direction[i][2]))
+        distances = sorted(distances, key=(lambda x: x[1]), reverse=True)
+        print(distances)
+        self.topLeft.move(distances[0][0])
+        self.topRight.move(distances[0][0])
+        self.botLeft.move(distances[0][0])
+        self.botRight.move(distances[0][0])
+
 
 
 if __name__ == '__main__':
