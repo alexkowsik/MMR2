@@ -10,6 +10,7 @@ from PyQt5.QtWidgets import *
 from copy import deepcopy
 
 import heapq
+import time
 
 WIDTH = 400
 HEIGHT = WIDTH
@@ -279,12 +280,50 @@ class Display:
         else:
             return (xP, yP, xB, yB), d
 
-    def printWay(self, node):
+    def printWay(self, node, n):
         print("--------------")
         print(node.state)
         while node.parent:
+            old = node
             node = node.parent
-            print(node.state[0:2], node.state[4:6], node.state[8:10])
+            print(node.state[0:2], node.state[4:6])
+
+            l = [a - b for a, b in zip(old.state, node.state)]
+            tmp, i = l[0:2], 0
+
+            while(tmp == [0, 0]):
+                i += 1
+                tmp = l[4*i:4*i+2]
+
+            if tmp == [-1, 0]:
+                for map in self.games:
+                    if not map.finished:
+                        map.move(Directions.north)
+                        map.refresh_widget(True)
+                    self.widget.update()
+            elif tmp == [1, 0]:
+                for map in self.games:
+                    if not map.finished:
+                        map.move(Directions.south)
+                        map.refresh_widget(True)
+                    self.widget.update()
+            elif tmp == [0, -1]:
+                for map in self.games:
+                    if not map.finished:
+                        map.move(Directions.west)
+                        map.refresh_widget(True)
+                    self.widget.update()
+            elif tmp == [0, 1]:
+                for map in self.games:
+                    if not map.finished:
+                        map.move(Directions.east)
+                        map.refresh_widget(True)
+                    self.widget.update()
+            else:
+                pass
+
+            time.sleep(1)
+
         print("--------------")
 
     def getStats(self, n):
@@ -357,7 +396,7 @@ class Display:
         return True
 
     # q ist eine Priority-Queue und visited enthält alle bereits besuchten states.
-    def dfs(self, n=3):
+    def dfs(self, n=2):
         q = []
         visited = dict()
 
@@ -394,7 +433,7 @@ class Display:
                 print("Iterationen:", count)
                 print("Weglänge:", node.count)
                 print("MD vom Anfang:", d)
-                self.printWay(node)
+                self.printWay(node, n)
                 return True
 
             count += 1
@@ -473,7 +512,7 @@ class Display:
                 print("Iterationen:", count)
                 print("Weglänge:", node.count)
                 print("MD vom Anfang:", d)
-                self.printWay(node)
+                self.printWay(node, n)
                 return True
 
         # Das sollte eigentlich nie erreicht werden
