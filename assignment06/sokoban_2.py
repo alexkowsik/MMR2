@@ -3,7 +3,6 @@ import sys
 # import enum
 from dataclasses import dataclass
 
-import numpy as np
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
@@ -13,6 +12,7 @@ import heapq
 import time
 
 WIDTH = 400
+WIDTH = 250
 HEIGHT = WIDTH
 coupled = True
 DEBUG = False
@@ -42,7 +42,7 @@ map1 = [[1, 1, 1, 1, 1, 1, 1, 1, 1],
 map2 = [[1, 1, 1, 1, 1, 1, 1, 1, 1],
         [1, 0, 0, 0, 1, 0, 0, 0, 1],
         [1, 0, 0, 0, 2, 3, 0, 1, 1],
-        [1, 0, 0, 0, 0, 0, 0, 0, 1],
+        [1, 0, 0, 0, 1, 0, 0, 0, 1],
         [1, 1, 1, 1, 1, 0, 0, 0, 1],
         [1, 0, 0, 0, 1, 0, 0, 0, 1],
         [4, 0, 0, 0, 0, 0, 0, 1, 1],
@@ -569,7 +569,7 @@ class Sokoban:
             else:
                 background_color = Qt.white
             if partial:
-                player_pos = self.get_player_pos()
+                player_pos = self.get_pos(3)
                 row_range = range(player_pos[0]-1, player_pos[0]+2)
                 column_range = range(player_pos[1]-1, player_pos[1]+2)
             else:
@@ -614,8 +614,7 @@ class Sokoban:
                                                          WIDTH // self.game_size,
                                                          HEIGHT // self.game_size)
                                 if color_id == 2:
-                                    painterInstance.setBrush(
-                                        QBrush(Qt.black, Qt.Dense6Pattern))
+                                    painterInstance.setBrush(QBrush(Qt.black, Qt.Dense6Pattern))
                                     painterInstance.drawRect(column_index * WIDTH // self.game_size,
                                                              row_index * HEIGHT // self.game_size,
                                                              WIDTH // self.game_size,
@@ -623,22 +622,10 @@ class Sokoban:
             painterInstance.end()
             self.label.setPixmap(self.pixmap)
 
-    def get_player_pos(self):
+    def get_pos(self, target):   # set target 3 for player, 2 for box, 4 for destination
         for i in range(self.game_size):
             for j in range(self.game_size):
-                if self.state[i][j] == 3:
-                    return tuple([i, j])
-
-    def get_destination(self):
-        for i in range(self.game_size):
-            for j in range(self.game_size):
-                if self.state[i][j] == 4:
-                    return tuple([i, j])
-
-    def get_box_pos(self):
-        for i in range(self.game_size):
-            for j in range(self.game_size):
-                if self.state[i][j] == 2:
+                if self.state[i][j] == target:
                     return tuple([i, j])
 
     # test if field in direction of movement is empty or contains movable box
@@ -655,19 +642,70 @@ class Sokoban:
     def move(self, direction):
         if self.is_movable(direction):
             if self.state[self.player_pos[0]+direction.x][self.player_pos[1]+direction.y] == 2:
-                self.state[self.player_pos[0] + 2 *
-                           direction.x][self.player_pos[1] + 2 * direction.y] = 2
+                self.state[self.player_pos[0] + 2 * direction.x][self.player_pos[1] + 2 * direction.y] = 2
+                self.box_pos = tuple([self.box_pos[0]+direction.x, self.box_pos[1]+direction.y])
             self.state[self.player_pos[0]][self.player_pos[1]] = 0
-            self.state[self.player_pos[0] +
-                       direction.x][self.player_pos[1] + direction.y] = 3
-            self.player_pos = tuple(
-                [self.player_pos[0]+direction.x, self.player_pos[1]+direction.y])
+            self.state[self.player_pos[0] + direction.x][self.player_pos[1] + direction.y] = 3
+            self.player_pos = tuple([self.player_pos[0]+direction.x, self.player_pos[1]+direction.y])
             if DEBUG:
-                print("moved from %s to (%i, %i)" % self.player_pos,
-                      self.player_pos[0 + direction.x], self.player_pos[1 + direction.y])
+                print("moved from %s to (%i, %i)" % self.player_pos, self.player_pos[0 + direction.x], self.player_pos[1 + direction.y])
         else:
             print("immovable!")
 
+    def is_possible(self):
+        x, y = self.box_pos[0], self.box_pos[1]
+        target = tuple([self.destination[0], self.destination[1]])
+
+        # False on win
+        if (x, y) == target:
+            return True
+
+        # False if box is in a corner
+        if y - 1 >= 0:
+            if self.state[x][y - 1] == 1:
+                if x + 1 < self.game_size and x - 1 >= 0:
+                    if self.state[x + 1][y] == 1 or self.state[x - 1][y] == 1:
+                        return False
+        if y + 1 < self.game_size:
+            if self.state[x][y + 1] == 1:
+                if x + 1 < self.game_size and x - 1 >= 0:
+                    if self.state[x + 1][y] == 1 or self.state[x - 1][y] == 1:
+                        return False
+
+        # True if box is in a tunnel
+        if (self.state[x - 1][y] == self.state[x + 1][y] and self.state[x - 1][y] == 1) \
+                or (self.state[x][y - 1] == self.state[x][y + 1] and self.state[x][y + 1] == 1):
+            return True
+
+        # False if box is at a wall and cannot be moved away
+        if self.state[x][y - 1] == 1:
+            if sum(row[y - 1] for row in self.state) > self.game_size - 1:
+                return False
+        if self.state[x][y + 1] == 1:
+            if sum(row[y + 1] for row in self.state) > self.game_size - 1:
+                return False
+        if self.state[x - 1][y] == 1:
+            if sum(self.state[x:, - 1]) > self.game_size - 1:
+                return False
+        if self.state[x + 1][y] == 1:
+            if sum(self.state[:, x + 1]) > self.game_size - 1:
+                return False
+
+        # False if box is at outer wall and target is not on that side
+        if y == 1:
+            if target[1] != 0:
+                return False
+        if y == self.game_size - 2:
+            if target[1] != self.game_size - 1:
+                return False
+        if x == 1:
+            if target[0] != 0:
+                return False
+        if x == self.game_size - 2:
+            if target[0] != self.game_size - 1:
+                return False
+
+        return True
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
