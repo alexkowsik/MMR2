@@ -134,9 +134,10 @@ class Display:
 
         if event.key() == Qt.Key_F:
             # self.dfs()
-            # for map in self.games:
-            #     print(map.is_possible())
-            print(self.games[1].is_possible())
+            for i in range(4):
+                if not i == 1:
+                    print(self.games[i].is_possible())
+            # print(self.games[1].is_possible())
             #TODO: is_possible funzt soweit für alle sokban instanzen. nur map1 wird nich als lösbar erkannt
 
         def dfs(self, n=2):
