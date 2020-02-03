@@ -527,11 +527,11 @@ class Sokoban:
         self.state = map
         # all maps must be squares an have the same size!
         self.game_size = len(self.state[0])
-        self.player_pos = self.get_player_pos()
-        self.destination = self.get_destination()
+        self.player_pos = self.get_pos(3)
+        self.destination = self.get_pos(4)
         self.finished = False
-        self.box_pos = self.get_box_pos()
-        self.no_go = self.calc_no_go()
+        self.box_pos = self.get_pos(2)
+        # self.no_go = self.calc_no_go()
         print(self.game_size)
 
         self.RGB = [Qt.white, Qt.black, Qt.yellow, Qt.green, Qt.white]
@@ -545,18 +545,18 @@ class Sokoban:
                                    ][self.destination[1]] == 2
         return self.finished
 
-    def calc_no_go(self):
-        no_go = self.state.deepcopy()
-        no_go[self.player_pos[0]][self.player_pos[1]] = 0
-        no_go[self.box_pos[0]][self.box_pos[1]] = 0
-        no_go[self.destination[0]][self.destination[1]] = 0
+    # def calc_no_go(self):
+    #     no_go = self.state.deepcopy()
+    #     no_go[self.player_pos[0]][self.player_pos[1]] = 0
+    #     no_go[self.box_pos[0]][self.box_pos[1]] = 0
+    #     no_go[self.destination[0]][self.destination[1]] = 0
 
-        for i in range(self.game_size):
-            for j in range(self.game_size):
-                for k in range(4):
-                    if no_go[][] == 1 and no_go[][] == 1:
-                        no_go[i][j] = 2
-        return
+        # for i in range(self.game_size):
+        #     for j in range(self.game_size):
+        #         for k in range(4):
+        #             if no_go[][] == 1 and no_go[][] == 1:
+        #                 no_go[i][j] = 2
+        # return
 
     # partial is a bool flag indicating to only redraw around the player
     def refresh_widget(self, partial):
