@@ -42,7 +42,7 @@ map1 = [[1, 1, 1, 1, 1, 1, 1, 1, 1],
 map2 = [[1, 1, 1, 1, 1, 1, 1, 1, 1],
         [1, 0, 0, 0, 1, 0, 0, 0, 1],
         [1, 0, 0, 0, 2, 3, 0, 1, 1],
-        [1, 0, 0, 0, 1, 0, 0, 0, 1],
+        [1, 0, 0, 0, 0, 0, 0, 0, 1],
         [1, 1, 1, 1, 1, 0, 0, 0, 1],
         [1, 0, 0, 0, 1, 0, 0, 0, 1],
         [4, 0, 0, 0, 0, 0, 0, 1, 1],
@@ -531,6 +531,7 @@ class Sokoban:
         self.destination = self.get_destination()
         self.finished = False
         self.box_pos = self.get_box_pos()
+        self.no_go = self.calc_no_go()
         print(self.game_size)
 
         self.RGB = [Qt.white, Qt.black, Qt.yellow, Qt.green, Qt.white]
@@ -543,6 +544,19 @@ class Sokoban:
         self.finished = self.state[self.destination[0]
                                    ][self.destination[1]] == 2
         return self.finished
+
+    def calc_no_go(self):
+        no_go = self.state.deepcopy()
+        no_go[self.player_pos[0]][self.player_pos[1]] = 0
+        no_go[self.box_pos[0]][self.box_pos[1]] = 0
+        no_go[self.destination[0]][self.destination[1]] = 0
+
+        for i in range(self.game_size):
+            for j in range(self.game_size):
+                for k in range(4):
+                    if no_go[][] == 1 and no_go[][] == 1:
+                        no_go[i][j] = 2
+        return
 
     # partial is a bool flag indicating to only redraw around the player
     def refresh_widget(self, partial):
@@ -574,7 +588,7 @@ class Sokoban:
                             color_id = self.state[row_index][column_index]
                             painterInstance.setBrush(
                                 QBrush(self.RGB[color_id], Qt.SolidPattern))
-                            if DEBUG and not (color_id == 1) and partial:
+                            if DEBUG and not (color_id == 1) and self.no_go[row_index][column_index] == 2:
                                 painterInstance.setBrush(
                                     QBrush(Qt.red, Qt.SolidPattern))
                             elif self.game_over() and not (color_id == 1):
