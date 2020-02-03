@@ -15,6 +15,8 @@ from copy import deepcopy
 import traceback
 import matplotlib.pyplot as plt
 
+import heapq
+
 H = 200
 W = 200
 N = 9
@@ -41,7 +43,7 @@ class Pos:
         return Pos(other.y + self.y, other.x + self.x)
 
     def __repr__(self):
-        return "(" + str(self.x) + ";" + str(self.y) +")"
+        return "(" + str(self.x) + ";" + str(self.y) + ")"
 
     def distance(self):
         return abs(self.x) + abs(self.y)
@@ -61,7 +63,7 @@ class Pos:
 
 
 class Game:
-    class GameField:  #copyconstruktor für die spieldaten
+    class GameField:  # copyconstruktor für die spieldaten
         def copy(self, other):
             self.playerPos = deepcopy(other.playerPos)
             self.boxPos = deepcopy(other.boxPos)
@@ -91,8 +93,6 @@ class Game:
                 self.field[i][N - 1] = black
 
             self.field[6][N - 1] = free
-
-
 
             # draw shizz
             self.painterInstance = QPainter(self.pixmap)
@@ -132,9 +132,9 @@ class Game:
             # directions = 2: down,6:left,8:up, 4:left
             flag = 0  # wird benutzt, um anzuzeugen, dass eine box im ziel angekommen ist
 
-            #folgenden 4 sektionen haben gleuchen aufbatu
+            # folgenden 4 sektionen haben gleuchen aufbatu
             if direction == down:
-                #testet, ob box oder spieler das feld verlassen würden
+                # testet, ob box oder spieler das feld verlassen würden
                 if self.playerPos.x + 1 == N or (self.boxPos.x == self.playerPos.x + 1 and self.playerPos.x + 2 == N):
                     return 0
                 xDif = 1
@@ -203,7 +203,7 @@ class Game:
                 else:
                     # black block im weg; box und spieler bleiben wo sie sind
                     pass
-            #wenn direkt vor dem spieler ein schwarzer block ist
+            # wenn direkt vor dem spieler ein schwarzer block ist
             elif (self.field[self.playerPos.x + xDif][self.playerPos.y + yDif] == black):
                 pass
             # keine Box im weg
@@ -222,11 +222,22 @@ class Game:
                                                  0.8 * (W // N), 0.8 * (H // N))
             self.painterInstance.end()
             self.label.setPixmap(self.pixmap)
-            if not Game.is_possible(self):
+            if not Game.is_possible(self.boxPos.x, self.boxPos.y, self.target.tup(), self.field):
                 print("Not possible to win")
             return flag
 
-    #setup der spielfedler und des UI
+    # Die Nodes des Graphen
+    class Node:
+        def __init__(self, cost, x1, y1, x2, y2, count=0):
+            self.cost = cost
+            self.state = (x1, y1, x2, y2)
+            self.parent = None
+            self.count = count
+
+        def __lt__(self, other):
+            return self.cost < other.cost
+
+    # setup der spielfedler und des UI
     def __init__(self):
         self.gamesCompleted = 0
         self.uwon = 0
@@ -248,13 +259,183 @@ class Game:
         self.widget.setLayout(self.box)
         self.widget.show()
 
+    @staticmethod
+    def dist(x1, y1, x2, y2):
+        return abs(x1 - x2) + abs(y1 - y2)
+
+    # Es finden bei den moveX-Methoden nur Überprüfungen statt, ob ein Zug
+    # möglich ist oder ob man gegen eine Wand bzw gegen die Kiste kommt.
+    # Die Heuristik d berechnet sich dabei aus der Manhatten-Distanz der Box
+    # zum Ziel, der MD des Spielers zur Box (es wird also "bestraft, wenn er
+    # sich von der Box entfernt") sowie dem count, das ist die Anzahl der Züge,
+    # die man gebraucht hat, um hier hin zu kommen. Das ist wichtig, da damit
+    # sichergestellt wird, dass es der kürzeste Weg ist.
+    def moveUp(self, xP, yP, xB, yB, target, field, count):
+        d = self.dist(xB, yB, target[0], target[1]) + \
+            self.dist(xP, yP, xB, yB) + count
+
+        if xP - 1 < 0:
+            return None
+
+        if field[xP - 1][yP] != black:
+            if xP - 1 == xB:
+                if yB == yP:
+                    if field[xB - 1][yB] != black:
+                        d = self.dist(xB - 1, yB, target[0], target[1]) + \
+                            self.dist(xP - 1, yP, xB - 1, yB) + count
+                        return self.Node(d, xP - 1, yP, xB - 1, yB, count + 1)
+                    else:
+                        return None
+                else:
+                    return self.Node(d, xP - 1, yP, xB, yB, count + 1)
+            else:
+                return self.Node(d, xP - 1, yP, xB, yB, count + 1)
+        else:
+            return None
+
+    def moveDown(self, xP, yP, xB, yB, target, field, count):
+        d = self.dist(xB, yB, target[0], target[1]) + \
+            self.dist(xP, yP, xB, yB) + count
+
+        if xP + 1 == N:
+            return None
+
+        if field[xP + 1][yP] != black:
+            if xP + 1 == xB:
+                if yB == yP:
+                    if field[xB + 1][yB] != black:
+                        d = self.dist(xB + 1, yB, target[0], target[1]) + \
+                            self.dist(xP + 1, yP, xB + 1, yB) + count
+                        return self.Node(d, xP + 1, yP, xB + 1, yB, count + 1)
+                    else:
+                        return None
+                else:
+                    return self.Node(d, xP + 1, yP, xB, yB, count + 1)
+            else:
+                return self.Node(d, xP + 1, yP, xB, yB, count + 1)
+        else:
+            return None
+
+    def moveLeft(self, xP, yP, xB, yB, target, field, count):
+        d = self.dist(xB, yB, target[0], target[1]) + \
+            self.dist(xP, yP, xB, yB) + count
+
+        if yP - 1 < 0:
+            return None
+
+        if field[xP][yP - 1] != black:
+            if yP - 1 == yB:
+                if xB == xP:
+                    if field[xB][yB - 1] != black:
+                        d = self.dist(xB, yB - 1, target[0], target[1]) + \
+                            self.dist(xP, yP - 1, xB, yB - 1) + count
+                        return self.Node(d, xP, yP - 1, xB, yB - 1, count + 1)
+                    else:
+                        return None
+                else:
+                    return self.Node(d, xP, yP - 1, xB, yB, count + 1)
+            else:
+                return self.Node(d, xP, yP - 1, xB, yB, count + 1)
+        else:
+            return None
+
+    def moveRight(self, xP, yP, xB, yB, target, field, count):
+        d = self.dist(xB, yB, target[0], target[1]) + \
+            self.dist(xP, yP, xB, yB) + count
+
+        if yP + 1 == N:
+            return None
+
+        if field[xP][yP + 1] != black:
+            if yP + 1 == yB:
+                if xB == xP:
+                    if field[xB][yB + 1] != black:
+                        d = self.dist(xB, yB + 1, target[0], target[1]) + \
+                            self.dist(xP, yP + 1, xB, yB + 1) + count
+                        return self.Node(d, xP, yP + 1, xB, yB + 1, count + 1)
+                    else:
+                        return None
+                else:
+                    return self.Node(d, xP, yP + 1, xB, yB, count + 1)
+            else:
+                return self.Node(d, xP, yP + 1, xB, yB, count + 1)
+        else:
+            return None
+
+    def printWay(self, node):
+        print(node.state)
+        while node.parent:
+            node = node.parent
+            print(node.state)
+
+    # q ist eine Priority-Queue und visited enthält alle bereits besuchten states.
+    def dfs(self):
+        q = []
+        visited = dict()
+
+        player = self.topLeft.playerPos.tup()
+        box = self.topLeft.boxPos.tup()
+        target = self.topLeft.target.tup()
+        field = self.topLeft.field
+
+        d = self.dist(box[0], box[1], target[0], target[1]) + \
+            self.dist(player[0], player[1], box[0], box[1])
+
+        start = self.Node(d, player[0], player[1], box[0], box[1])
+        q.append(start)
+        heapq.heapify(q)
+
+        # Solange noch Wege möglich sind, werden sie exploriert, dabei wird immer
+        # der Zug mit dem kleinsten Wert genommen, da Priority-Queue.
+        while q:
+            node = heapq.heappop(q)
+            visited[node.state] = True
+
+            xP = node.state[0]
+            yP = node.state[1]
+            xB = node.state[2]
+            yB = node.state[3]
+
+            # Ist das Ende erreicht, soll der Pfad ausgegeben werden
+            if (xB, yB) == target or node.state[0] == 0:
+                self.printWay(node)
+                return node
+
+            # Klassische Tiefensuche nach Dijkstra, es werden alle möglichen Züge
+            # durchprobiert unter Bedacht der Heuristiken und je nachdem, ob sie
+            # möglich sind, noch nicht besucht sind und nicht zu einen Deadlock
+            # führen.
+            up = self.moveUp(xP, yP, xB, yB, target, field, node.count)
+            if up and not up in visited and Game.is_possible(xB, yB, target, field):
+                up.parent = node
+                visited[up.state] = True
+                heapq.heappush(q, up)
+            down = self.moveDown(xP, yP, xB, yB, target, field, node.count)
+            if down and not down in visited and Game.is_possible(xB, yB, target, field):
+                down.parent = node
+                visited[down.state] = True
+                heapq.heappush(q, down)
+            left = self.moveLeft(xP, yP, xB, yB, target, field, node.count)
+            if left and not left in visited and Game.is_possible(xB, yB, target, field):
+                left.parent = node
+                visited[left.state] = True
+                heapq.heappush(q, left)
+            right = self.moveRight(xP, yP, xB, yB, target, field, node.count)
+            if right and not right in visited and Game.is_possible(xB, yB, target, field):
+                right.parent = node
+                visited[right.state] = True
+                heapq.heappush(q, right)
+
+        # Das sollte eigentlich nie erreicht werden
+        print("no way found")
+        return None
+
     def keyPressEvent(self, event):
         if event.key() == Qt.Key_S:
             self.gamesCompleted += self.botRight.move(down)
             self.gamesCompleted += self.topRight.move(down)
             self.gamesCompleted += self.botLeft.move(down)
             self.gamesCompleted += self.topLeft.move(down)
-
 
         if event.key() == Qt.Key_W:
             self.gamesCompleted += self.botRight.move(up)
@@ -275,7 +456,11 @@ class Game:
             self.gamesCompleted += self.topLeft.move(right)
 
         if event.key() == Qt.Key_R:
-            self.automaticSolving(3, self.topRight, self.topLeft, self.botRight)
+            self.automaticSolving(
+                3, self.topRight, self.topLeft, self.botRight)
+
+        if event.key() == Qt.Key_F:
+            self.dfs()
 
         if self.gamesCompleted == 4:
             self.uwon += 1
@@ -300,7 +485,7 @@ class Game:
     #   > spieler entfernt sich nicht zur box.
 
     # Zustände sind durcheine Kante verbunden, wenn für eines der tupel die spielerposition dieselbe ist oder nur in
-    #x oder y sich um 1 unetrscheidet
+    # x oder y sich um 1 unetrscheidet
     def makeLocalGraph(self, lenArg, *arg):
         # one graph solution, arg is the gamefiled passed
         graph = []
@@ -311,12 +496,12 @@ class Game:
             left: Pos(0, -1),
             right: Pos(0, 1)
         }
-        #für jeder der verfügbaren richtungen
+        # für jeder der verfügbaren richtungen
         for j in [up, down, left, right]:
 
             for i in range(lenArg):
                 # ------------teste, ob spielzug möglich ist----------------------------------------------
-                #erstelle eine kopie des spielfelds, um spielzug zu simulieren
+                # erstelle eine kopie des spielfelds, um spielzug zu simulieren
                 temp = self.GameField()
                 temp.copy(arg[i])
 
@@ -354,7 +539,7 @@ class Game:
             Pos(0, -1).tup(): up,
             Pos(0, 1).tup(): down
         }
-        #macht graphen, für alle gegebenen felder
+        # macht graphen, für alle gegebenen felder
         graph = self.makeLocalGraph(numGames, *arg)
         for i in range(len(graph)):
             temp = graph[i]
@@ -380,9 +565,7 @@ class Game:
         # arg[0].move(reversedict[(movesThatReduceDistanceToGoal[0][0][0] - movesThatReduceDistanceToGoal[0][0][1]).tup()])
         # print(arg[0].boxPos+tempdict[right])
         # print("hi", movesThatReduceDistanceToGoal)
-        #print("232", movesThatReduceDistanceToBox)
-
-
+        # print("232", movesThatReduceDistanceToBox)
 
     def walkBehindBox(self, numgraphs, distances):
 
@@ -399,56 +582,57 @@ class Game:
         self.botLeft.move(direction)
         self.botRight.move(direction)
 
-    def is_possible(currentGame):
-        y, x = currentGame.boxPos.x, currentGame.boxPos.y
+    @staticmethod
+    def is_possible(xB, yB, target, field):
+        x, y = xB, yB
 
         # False on win
-        if currentGame.boxPos == currentGame.target:
+        if (xB, yB) == target:
             return True
 
         # False if box is in a corner
         if y - 1 >= 0:
-            if currentGame.field[x][y - 1] == black:
+            if field[x][y - 1] == black:
                 if x + 1 < N and x - 1 >= 0:
-                    if currentGame.field[x + 1][y] == black or currentGame.field[x - 1][y] == black:
+                    if field[x + 1][y] == black or field[x - 1][y] == black:
                         return False
         if y + 1 < N:
-            if currentGame.field[x][y + 1] == black:
+            if field[x][y + 1] == black:
                 if x + 1 < N and x - 1 >= 0:
-                    if currentGame.field[x + 1][y] == black or currentGame.field[x - 1][y] == black:
+                    if field[x + 1][y] == black or field[x - 1][y] == black:
                         return False
 
         # True if box is in a tunnel
-        if (currentGame.field[x - 1][y] == currentGame.field[x + 1][y] and currentGame.field[x - 1][y] == black) \
-                or (currentGame.field[x][y - 1] == currentGame.field[x][y + 1] and currentGame.field[x][y + 1] == black):
+        if (field[x - 1][y] == field[x + 1][y] and field[x - 1][y] == black) \
+                or (field[x][y - 1] == field[x][y + 1] and field[x][y + 1] == black):
             return True
 
         # False if box is at a wall and cannot be moved away
-        if currentGame.field[x][y - 1] == black:
-            if sum(row[y - 1] for row in currentGame.field) > N - 1:
+        if field[x][y - 1] == black:
+            if sum(row[y - 1] for row in field) > N - 1:
                 return False
-        if currentGame.field[x][y + 1] == black:
-            if sum(row[y + 1] for row in currentGame.field) > N - 1:
+        if field[x][y + 1] == black:
+            if sum(row[y + 1] for row in field) > N - 1:
                 return False
-        if currentGame.field[x - 1][y] == black:
-            if sum(currentGame.field[x:, - 1]) > N - 1:
+        if field[x - 1][y] == black:
+            if sum(field[x:, - 1]) > N - 1:
                 return False
-        if currentGame.field[x + 1][y] == black:
-            if sum(currentGame.field[:,x+1]) > N - 1:
+        if field[x + 1][y] == black:
+            if sum(field[:, x+1]) > N - 1:
                 return False
 
         # False if box is at outer wall and target is not on that side
         if y == 1:
-            if currentGame.target.y != 0:
+            if target[1] != 0:
                 return False
         if y == N - 2:
-            if currentGame.target.y != N - 1:
+            if target[1] != N - 1:
                 return False
         if x == 1:
-            if currentGame.target.x != 0:
+            if target[0] != 0:
                 return False
         if x == N - 2:
-            if currentGame.target.x != N - 1:
+            if target[0] != N - 1:
                 return False
 
         return True
