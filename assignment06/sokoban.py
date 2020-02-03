@@ -73,7 +73,7 @@ class Game:
 
         # 0 == free, 1 == Black, 2 == box, 3 == Player
         # setup a playing field
-        def __init__(self):
+        def __init__(self, f=False):
             self.pixmap = QPixmap(QPixmap.fromImage(
                 QImage(W, H, QImage.Format_RGBA8888)))
             self.label = QLabel()
@@ -91,6 +91,11 @@ class Game:
                 self.field[N - 1][i] = black
                 self.field[i][0] = black
                 self.field[i][N - 1] = black
+
+            if f:
+                self.field[3][3] = black
+                self.field[6][3] = black
+                self.field[6][6] = black
 
             self.field[6][N - 1] = free
 
@@ -228,9 +233,9 @@ class Game:
 
     # Die Nodes des Graphen
     class Node:
-        def __init__(self, cost, x1, y1, x2, y2, count=0):
+        def __init__(self, cost, count, tupl):
             self.cost = cost
-            self.state = (x1, y1, x2, y2)
+            self.state = tupl
             self.parent = None
             self.count = count
 
@@ -242,7 +247,7 @@ class Game:
         self.gamesCompleted = 0
         self.uwon = 0
         self.topLeft = self.GameField()
-        self.topRight = self.GameField()
+        self.topRight = self.GameField(True)
         self.botLeft = self.GameField()
         self.botRight = self.GameField()
 
@@ -275,158 +280,263 @@ class Game:
             self.dist(xP, yP, xB, yB) + count
 
         if xP - 1 < 0:
-            return None
+            return (xP, yP, xB, yB), d
 
         if field[xP - 1][yP] != black:
+            d = self.dist(xB, yB, target[0], target[1]) + \
+                self.dist(xP - 1, yP, xB, yB) + count
             if xP - 1 == xB:
                 if yB == yP:
                     if field[xB - 1][yB] != black:
                         d = self.dist(xB - 1, yB, target[0], target[1]) + \
                             self.dist(xP - 1, yP, xB - 1, yB) + count
-                        return self.Node(d, xP - 1, yP, xB - 1, yB, count + 1)
+                        return (xP - 1, yP, xB - 1, yB), d
                     else:
-                        return None
+                        return (xP, yP, xB, yB), d
                 else:
-                    return self.Node(d, xP - 1, yP, xB, yB, count + 1)
+                    return (xP - 1, yP, xB, yB), d
             else:
-                return self.Node(d, xP - 1, yP, xB, yB, count + 1)
+                return (xP - 1, yP, xB, yB), d
         else:
-            return None
+            return (xP, yP, xB, yB), d
 
     def moveDown(self, xP, yP, xB, yB, target, field, count):
         d = self.dist(xB, yB, target[0], target[1]) + \
             self.dist(xP, yP, xB, yB) + count
 
         if xP + 1 == N:
-            return None
+            return (xP, yP, xB, yB), d
 
         if field[xP + 1][yP] != black:
+            d = self.dist(xB, yB, target[0], target[1]) + \
+                self.dist(xP + 1, yP, xB, yB) + count
             if xP + 1 == xB:
                 if yB == yP:
                     if field[xB + 1][yB] != black:
                         d = self.dist(xB + 1, yB, target[0], target[1]) + \
                             self.dist(xP + 1, yP, xB + 1, yB) + count
-                        return self.Node(d, xP + 1, yP, xB + 1, yB, count + 1)
+                        return (xP + 1, yP, xB + 1, yB), d
                     else:
-                        return None
+                        return (xP, yP, xB, yB), d
                 else:
-                    return self.Node(d, xP + 1, yP, xB, yB, count + 1)
+                    return (xP + 1, yP, xB, yB), d
             else:
-                return self.Node(d, xP + 1, yP, xB, yB, count + 1)
+                return (xP + 1, yP, xB, yB), d
         else:
-            return None
+            return (xP, yP, xB, yB), d
 
     def moveLeft(self, xP, yP, xB, yB, target, field, count):
         d = self.dist(xB, yB, target[0], target[1]) + \
             self.dist(xP, yP, xB, yB) + count
 
         if yP - 1 < 0:
-            return None
+            return (xP, yP, xB, yB), d
 
         if field[xP][yP - 1] != black:
+            d = self.dist(xB, yB, target[0], target[1]) + \
+                self.dist(xP, yP - 1, xB, yB) + count
             if yP - 1 == yB:
                 if xB == xP:
                     if field[xB][yB - 1] != black:
                         d = self.dist(xB, yB - 1, target[0], target[1]) + \
                             self.dist(xP, yP - 1, xB, yB - 1) + count
-                        return self.Node(d, xP, yP - 1, xB, yB - 1, count + 1)
+                        return (xP, yP - 1, xB, yB - 1), d
                     else:
-                        return None
+                        return (xP, yP, xB, yB), d
                 else:
-                    return self.Node(d, xP, yP - 1, xB, yB, count + 1)
+                    return (xP, yP - 1, xB, yB), d
             else:
-                return self.Node(d, xP, yP - 1, xB, yB, count + 1)
+                return (xP, yP - 1, xB, yB), d
         else:
-            return None
+            return (xP, yP, xB, yB), d
 
     def moveRight(self, xP, yP, xB, yB, target, field, count):
         d = self.dist(xB, yB, target[0], target[1]) + \
             self.dist(xP, yP, xB, yB) + count
 
         if yP + 1 == N:
-            return None
+            return (xP, yP, xB, yB), d
 
         if field[xP][yP + 1] != black:
+            d = self.dist(xB, yB, target[0], target[1]) + \
+                self.dist(xP, yP + 1, xB, yB) + count
             if yP + 1 == yB:
                 if xB == xP:
                     if field[xB][yB + 1] != black:
                         d = self.dist(xB, yB + 1, target[0], target[1]) + \
                             self.dist(xP, yP + 1, xB, yB + 1) + count
-                        return self.Node(d, xP, yP + 1, xB, yB + 1, count + 1)
+                        return (xP, yP + 1, xB, yB + 1), d
                     else:
-                        return None
+                        return (xP, yP, xB, yB), d
                 else:
-                    return self.Node(d, xP, yP + 1, xB, yB, count + 1)
+                    return (xP, yP + 1, xB, yB), d
             else:
-                return self.Node(d, xP, yP + 1, xB, yB, count + 1)
+                return (xP, yP + 1, xB, yB), d
         else:
-            return None
+            return (xP, yP, xB, yB), d
 
     def printWay(self, node):
+        print("--------------")
         print(node.state)
         while node.parent:
             node = node.parent
             print(node.state)
+        print("--------------")
+
+    def getStats(self, n):
+        l = ["topLeft", "topRight", "botLeft", "botRight"]
+        players = []
+        boxes = []
+        targets = []
+        fields = []
+
+        players.append(self.topLeft.playerPos.tup())
+        boxes.append(self.topLeft.boxPos.tup())
+        targets.append(self.topLeft.target.tup())
+        fields.append(self.topLeft.field)
+
+        if n == 2:
+            players.append(self.topRight.playerPos.tup())
+            boxes.append(self.topRight.boxPos.tup())
+            targets.append(self.topRight.target.tup())
+            fields.append(self.topRight.field)
+
+        if n == 3:
+            players.append(self.botLeft.playerPos.tup())
+            boxes.append(self.botLeft.boxPos.tup())
+            targets.append(self.botLeft.target.tup())
+            fields.append(self.botLeft.field)
+
+        if n == 4:
+            players.append(self.botRight.playerPos.tup())
+            boxes.append(self.botRight.boxPos.tup())
+            targets.append(self.botRight.target.tup())
+            fields.append(self.botRight.field)
+
+        return players, boxes, targets, fields
 
     # q ist eine Priority-Queue und visited enthält alle bereits besuchten states.
-    def dfs(self):
+    def dfs(self, n=2):
         q = []
         visited = dict()
 
-        player = self.topLeft.playerPos.tup()
-        box = self.topLeft.boxPos.tup()
-        target = self.topLeft.target.tup()
-        field = self.topLeft.field
+        players, boxes, targets, fields = self.getStats(n)
+        d = []
+        tupl = tuple()
 
-        d = self.dist(box[0], box[1], target[0], target[1]) + \
-            self.dist(player[0], player[1], box[0], box[1])
+        for i in range(n):
+            d.append(self.dist(boxes[i][0], boxes[i][1], targets[i][0], targets[i][1]) +
+                     self.dist(players[i][0], players[i][1],
+                               boxes[i][0], boxes[i][1]))
+            tupl += (players[i][0], players[i][1], boxes[i][0], boxes[i][1])
 
-        start = self.Node(d, player[0], player[1], box[0], box[1])
+        d = max(d)
+
+        start = self.Node(d, 0, tupl)
         q.append(start)
         heapq.heapify(q)
+        count = 0
 
         # Solange noch Wege möglich sind, werden sie exploriert, dabei wird immer
         # der Zug mit dem kleinsten Wert genommen, da Priority-Queue.
         while q:
+            count += 1
             node = heapq.heappop(q)
             visited[node.state] = True
 
-            xP = node.state[0]
-            yP = node.state[1]
-            xB = node.state[2]
-            yB = node.state[3]
+            up = tuple()
+            down = tuple()
+            left = tuple()
+            right = tuple()
 
-            # Ist das Ende erreicht, soll der Pfad ausgegeben werden
-            if (xB, yB) == target or node.state[0] == 0:
-                self.printWay(node)
-                return node
+            upc = downc = leftc = rightc = 0
 
-            # Klassische Tiefensuche nach Dijkstra, es werden alle möglichen Züge
-            # durchprobiert unter Bedacht der Heuristiken und je nachdem, ob sie
-            # möglich sind, noch nicht besucht sind und nicht zu einen Deadlock
-            # führen.
-            up = self.moveUp(xP, yP, xB, yB, target, field, node.count)
-            if up and not up in visited and Game.is_possible(xB, yB, target, field):
+            finished = [0 for _ in range(n)]
+
+            for i in range(n):
+                if sum(finished) == n:
+                    print("Iterationen:", count)
+                    print("Weglänge:", node.count)
+                    print("MD vom Anfang:", d)
+                    self.printWay(node)
+                    return True
+
+                xP = node.state[0 + 4*i]
+                yP = node.state[1 + 4*i]
+                xB = node.state[2 + 4*i]
+                yB = node.state[3 + 4*i]
+
+                # Ist das Ende erreicht, soll der Pfad ausgegeben werden
+                if (xB, yB) == targets[i]:
+                    finished[i] = 1
+                    up += node.state
+                    down += node.state
+                    left += node.state
+                    right += node.state
+                    upc = downc = leftc = rightc = 0
+                    continue
+
+                # Klassische Tiefensuche nach Dijkstra, es werden alle möglichen Züge
+                # durchprobiert unter Bedacht der Heuristiken und je nachdem, ob sie
+                # möglich sind, noch nicht besucht sind und nicht zu einen Deadlock
+                # führen.
+                _up, up_count = self.moveUp(
+                    xP, yP, xB, yB, targets[i], fields[i], node.count)
+                _down, down_count = self.moveDown(
+                    xP, yP, xB, yB, targets[i], fields[i], node.count)
+                _left, left_count = self.moveLeft(
+                    xP, yP, xB, yB, targets[i], fields[i], node.count)
+                _right, right_count = self.moveRight(
+                    xP, yP, xB, yB, targets[i], fields[i], node.count)
+
+                up += _up
+                down += _down
+                left += _left
+                right += _right
+
+                upc = up_count if upc > up_count else upc
+                downc = down_count if down_count > downc else downc
+                leftc = left_count if left_count > leftc else leftc
+                rightc = right_count if right_count > rightc else rightc
+
+            def check_all():
+                end = True
+                for i in range(n):
+                    end = end and Game.is_possible(
+                        node.state[2 + 4*i], node.state[3 + 4*i], targets[i], fields[i])
+                return end
+
+            # TODO: write function to check all fields
+            if not up in visited and check_all():
+                up = self.Node(upc, node.count + 1, up)
                 up.parent = node
                 visited[up.state] = True
                 heapq.heappush(q, up)
-            down = self.moveDown(xP, yP, xB, yB, target, field, node.count)
-            if down and not down in visited and Game.is_possible(xB, yB, target, field):
+            if not down in visited and check_all():
+                down = self.Node(downc, node.count + 1, down)
                 down.parent = node
                 visited[down.state] = True
                 heapq.heappush(q, down)
-            left = self.moveLeft(xP, yP, xB, yB, target, field, node.count)
-            if left and not left in visited and Game.is_possible(xB, yB, target, field):
+            if not left in visited and check_all():
+                left = self.Node(leftc, node.count + 1, left)
                 left.parent = node
                 visited[left.state] = True
                 heapq.heappush(q, left)
-            right = self.moveRight(xP, yP, xB, yB, target, field, node.count)
-            if right and not right in visited and Game.is_possible(xB, yB, target, field):
+            if not right in visited and check_all():
+                right = self.Node(rightc, node.count + 1, right)
                 right.parent = node
                 visited[right.state] = True
                 heapq.heappush(q, right)
 
+            if sum(finished) == n:
+                print("Iterationen:", count)
+                print("Weglänge:", node.count)
+                print("MD vom Anfang:", d)
+                self.printWay(node)
+                return True
+
         # Das sollte eigentlich nie erreicht werden
+        print(count)
         print("no way found")
         return None
 
