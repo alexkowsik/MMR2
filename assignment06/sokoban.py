@@ -73,7 +73,7 @@ class Game:
 
         # 0 == free, 1 == Black, 2 == box, 3 == Player
         # setup a playing field
-        def __init__(self, f=False):
+        def __init__(self, d=False, f=False, g=False, j=False):
             self.pixmap = QPixmap(QPixmap.fromImage(
                 QImage(W, H, QImage.Format_RGBA8888)))
             self.label = QLabel()
@@ -82,8 +82,8 @@ class Game:
             self.field[1][1] = player
             self.boxPos = Pos(2, 2)
             self.field[2][2] = box
-            self.target = Pos(6, N - 1)
-            self.goal = Pos(6, N - 1)
+            self.target = Pos(N-2, N - 1)
+            self.goal = Pos(N-2, N - 1)
 
             self.moveCounter = 0
             for i in range(N):
@@ -92,12 +92,59 @@ class Game:
                 self.field[i][0] = black
                 self.field[i][N - 1] = black
 
-            if f:
-                self.field[3][3] = black
-                self.field[6][3] = black
-                self.field[6][6] = black
+            self.field[N-2][N - 1] = free
 
-            self.field[6][N - 1] = free
+            if d:
+                self.field = [[1, 1, 1, 1, 1, 1, 1, 4, 1],
+                            [1, 0, 0, 0, 0, 0, 0, 0, 1],
+                            [1, 0, 1, 1, 0, 0, 0, 0, 1],
+                            [1, 0, 0, 1, 0, 0, 0, 0, 1],
+                            [1, 0, 2, 1, 0, 0, 0, 0, 1],
+                            [1, 0, 3, 0, 0, 0, 0, 0, 1],
+                            [1, 0, 0, 1, 1, 1, 0, 0, 1],
+                            [1, 0, 0, 0, 0, 0, 0, 0, 1],
+                            [1, 1, 1, 1, 1, 1, 1, 1, 1]]
+                self.target = Pos(0, N-1)
+                self.goal = Pos(0, N - 1)
+
+            if f:
+                self.field = [[1, 1, 1, 1, 1, 1, 1, 1, 1],
+                            [1, 0, 1, 0, 0, 0, 1, 1, 1],
+                            [1, 0, 3, 2, 0, 0, 0, 1, 1],
+                            [1, 0, 1, 1, 1, 0, 0, 0, 1],
+                            [1, 0, 0, 0, 0, 0, 0, 0, 1],
+                            [1, 0, 0, 0, 0, 1, 0, 0, 1],
+                            [1, 0, 0, 0, 0, 1, 0, 0, 1],
+                            [1, 0, 0, 0, 0, 1, 0, 0, 4],
+                            [1, 1, 1, 1, 1, 1, 1, 1, 1]]
+                self.target = Pos(N-2, N - 1)
+                self.goal = Pos(N-2, N - 1)
+
+            if g:
+                self.field = [[1, 1, 1, 1, 1, 1, 1, 1, 1],
+                        [1, 0, 0, 0, 1, 0, 0, 0, 1],
+                        [1, 0, 0, 0, 2, 3, 0, 1, 1],
+                        [1, 0, 0, 0, 1, 0, 0, 0, 1],
+                        [1, 1, 1, 1, 1, 0, 0, 0, 1],
+                        [1, 0, 0, 0, 1, 0, 0, 0, 1],
+                        [4, 0, 0, 0, 0, 0, 0, 1, 1],
+                        [1, 0, 0, 0, 0, 0, 0, 0, 1],
+                        [1, 1, 1, 1, 1, 1, 1, 1, 1]]
+                self.target = Pos(0, N - 2)
+                self.goal = Pos(0, N - 2)
+                
+            if j:
+                self.field = [[1, 1, 1, 1, 1, 1, 1, 1, 1],
+                        [1, 0, 0, 0, 0, 0, 0, 0, 1],
+                        [1, 0, 0, 0, 0, 0, 0, 0, 1],
+                        [1, 0, 0, 0, 1, 1, 0, 0, 1],
+                        [1, 1, 1, 0, 1, 0, 2, 3, 1],
+                        [1, 0, 0, 0, 1, 1, 0, 0, 1],
+                        [1, 0, 0, 0, 1, 0, 0, 0, 1],
+                        [1, 0, 0, 0, 0, 0, 0, 1, 1],
+                        [1, 1, 4, 1, 1, 1, 1, 1, 1]]
+                self.target = Pos(N-1, 2)
+                self.goal = Pos(N-1, 2)
 
             # draw shizz
             self.painterInstance = QPainter(self.pixmap)
@@ -247,7 +294,7 @@ class Game:
         self.gamesCompleted = 0
         self.uwon = 0
         self.topLeft = self.GameField()
-        self.topRight = self.GameField(True)
+        self.topRight = self.GameField()
         self.botLeft = self.GameField()
         self.botRight = self.GameField()
 
@@ -276,6 +323,9 @@ class Game:
     # die man gebraucht hat, um hier hin zu kommen. Das ist wichtig, da damit
     # sichergestellt wird, dass es der kürzeste Weg ist.
     def moveUp(self, xP, yP, xB, yB, target, field, count):
+        if (xB, yB) == target:
+            return (xP, yP, xB, yB), 0
+
         d = self.dist(xB, yB, target[0], target[1]) + \
             self.dist(xP, yP, xB, yB) + count
 
@@ -301,10 +351,13 @@ class Game:
             return (xP, yP, xB, yB), d
 
     def moveDown(self, xP, yP, xB, yB, target, field, count):
+        if (xB, yB) == target:
+            return (xP, yP, xB, yB), 0
+
         d = self.dist(xB, yB, target[0], target[1]) + \
             self.dist(xP, yP, xB, yB) + count
 
-        if xP + 1 == N:
+        if xP == N - 2:
             return (xP, yP, xB, yB), d
 
         if field[xP + 1][yP] != black:
@@ -326,6 +379,9 @@ class Game:
             return (xP, yP, xB, yB), d
 
     def moveLeft(self, xP, yP, xB, yB, target, field, count):
+        if (xB, yB) == target:
+            return (xP, yP, xB, yB), 0
+
         d = self.dist(xB, yB, target[0], target[1]) + \
             self.dist(xP, yP, xB, yB) + count
 
@@ -351,10 +407,13 @@ class Game:
             return (xP, yP, xB, yB), d
 
     def moveRight(self, xP, yP, xB, yB, target, field, count):
+        if (xB, yB) == target:
+            return (xP, yP, xB, yB), 0
+
         d = self.dist(xB, yB, target[0], target[1]) + \
             self.dist(xP, yP, xB, yB) + count
 
-        if yP + 1 == N:
+        if yP == N - 2:
             return (xP, yP, xB, yB), d
 
         if field[xP][yP + 1] != black:
@@ -421,25 +480,44 @@ class Game:
         visited = dict()
 
         players, boxes, targets, fields = self.getStats(n)
-        d = []
+        d = 0
         tupl = tuple()
 
         for i in range(n):
-            d.append(self.dist(boxes[i][0], boxes[i][1], targets[i][0], targets[i][1]) +
-                     self.dist(players[i][0], players[i][1],
-                               boxes[i][0], boxes[i][1]))
+            tmp = self.dist(boxes[i][0], boxes[i][1], targets[i][0], targets[i][1]) + \
+                self.dist(players[i][0], players[i][1],
+                          boxes[i][0], boxes[i][1])
+            if tmp > d:
+                d = tmp
             tupl += (players[i][0], players[i][1], boxes[i][0], boxes[i][1])
-
-        d = max(d)
 
         start = self.Node(d, 0, tupl)
         q.append(start)
         heapq.heapify(q)
         count = 0
 
+        def check_all():
+            end = True
+            for i in range(n):
+                end = end and Game.is_possible(
+                    node.state[2 + 4*i], node.state[3 + 4*i], targets[i], fields[i])
+            return end
+
+        finished = [0 for _ in range(n)]
+
         # Solange noch Wege möglich sind, werden sie exploriert, dabei wird immer
         # der Zug mit dem kleinsten Wert genommen, da Priority-Queue.
         while q:
+            if count == 50:
+                pass
+
+            if sum(finished) == n:
+                print("Iterationen:", count)
+                print("Weglänge:", node.count)
+                print("MD vom Anfang:", d)
+                self.printWay(node)
+                return True
+
             count += 1
             node = heapq.heappop(q)
             visited[node.state] = True
@@ -451,16 +529,7 @@ class Game:
 
             upc = downc = leftc = rightc = 0
 
-            finished = [0 for _ in range(n)]
-
             for i in range(n):
-                if sum(finished) == n:
-                    print("Iterationen:", count)
-                    print("Weglänge:", node.count)
-                    print("MD vom Anfang:", d)
-                    self.printWay(node)
-                    return True
-
                 xP = node.state[0 + 4*i]
                 yP = node.state[1 + 4*i]
                 xB = node.state[2 + 4*i]
@@ -469,12 +538,6 @@ class Game:
                 # Ist das Ende erreicht, soll der Pfad ausgegeben werden
                 if (xB, yB) == targets[i]:
                     finished[i] = 1
-                    up += node.state
-                    down += node.state
-                    left += node.state
-                    right += node.state
-                    upc = downc = leftc = rightc = 0
-                    continue
 
                 # Klassische Tiefensuche nach Dijkstra, es werden alle möglichen Züge
                 # durchprobiert unter Bedacht der Heuristiken und je nachdem, ob sie
@@ -499,30 +562,27 @@ class Game:
                 leftc = left_count if left_count > leftc else leftc
                 rightc = right_count if right_count > rightc else rightc
 
-            def check_all():
-                end = True
-                for i in range(n):
-                    end = end and Game.is_possible(
-                        node.state[2 + 4*i], node.state[3 + 4*i], targets[i], fields[i])
-                return end
-
             # TODO: write function to check all fields
-            if not up in visited and check_all():
+            if not up in visited:  # and check_all():
+                # print("up", up)
                 up = self.Node(upc, node.count + 1, up)
                 up.parent = node
                 visited[up.state] = True
                 heapq.heappush(q, up)
-            if not down in visited and check_all():
+            if not down in visited:  # and check_all():
+                # print("down", down)
                 down = self.Node(downc, node.count + 1, down)
                 down.parent = node
                 visited[down.state] = True
                 heapq.heappush(q, down)
-            if not left in visited and check_all():
+            if not left in visited:  # and check_all():
+                # print("left", left)
                 left = self.Node(leftc, node.count + 1, left)
                 left.parent = node
                 visited[left.state] = True
                 heapq.heappush(q, left)
-            if not right in visited and check_all():
+            if not right in visited:  # and check_all():
+                # print("right", right)
                 right = self.Node(rightc, node.count + 1, right)
                 right.parent = node
                 visited[right.state] = True
@@ -719,30 +779,30 @@ class Game:
 
         # False if box is at a wall and cannot be moved away
         if field[x][y - 1] == black:
-            if sum(row[y - 1] for row in field) > N - 1:
+            if sum(row[y - 1] for row in field) > N - 1 and target[1] != y:
                 return False
         if field[x][y + 1] == black:
-            if sum(row[y + 1] for row in field) > N - 1:
+            if sum(row[y + 1] for row in field) > N - 1 and target[1] != y:
                 return False
-        if field[x - 1][y] == black:
+        if field[x - 1][y] == black and target[0] != x:
             if sum(field[x:, - 1]) > N - 1:
                 return False
-        if field[x + 1][y] == black:
+        if field[x + 1][y] == black and target[0] != x:
             if sum(field[:, x+1]) > N - 1:
                 return False
 
         # False if box is at outer wall and target is not on that side
         if y == 1:
-            if target[1] != 0:
+            if target[1] != 0 and target[1] != 1:
                 return False
         if y == N - 2:
-            if target[1] != N - 1:
+            if target[1] != N - 1 and target[1] != N - 2:
                 return False
         if x == 1:
-            if target[0] != 0:
+            if target[0] != 0 and target[0] != 1:
                 return False
         if x == N - 2:
-            if target[0] != N - 1:
+            if target[0] != N - 1 and target[0] != N - 2:
                 return False
 
         return True
