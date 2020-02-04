@@ -11,7 +11,7 @@ from copy import deepcopy
 import heapq
 import time
 
-WIDTH = 250
+WIDTH = 200
 HEIGHT = WIDTH
 coupled = True
 DEBUG = True
@@ -83,6 +83,8 @@ class Display:
         self.widget = QWidget()
         self.widget.keyPressEvent = self.keyPressEvent
         self.box = QGridLayout()
+        self.timer = QTimer()
+        # self.timer.connect(self.printWay)
 
         self.displays = [None, None, None, None]
 
@@ -395,7 +397,7 @@ class Display:
         return True
 
     # q ist eine Priority-Queue und visited enthält alle bereits besuchten states.
-    def dfs(self, n=2):
+    def dfs(self, n=4):
         q = []
         visited = dict()
 
@@ -554,15 +556,19 @@ class Sokoban:
         # mark all corners as no-go
         for i in range(1, self.game_size-1):
             for j in range(1, self.game_size-1):
-                for k in range(4):
-                    l = (k+1) % 4
-                    diag1 = ((-(k%2))+(k//3)*2)
-                    diag2 = (1-abs(2-k))
-                    diag3 = ((-(l%2))+(l//3)*2)
-                    diag4 = (1-abs(2-l))
-                    if no_go[i+diag1][j+diag2] == 1\
-                            and no_go[i+diag3][j+diag4] == 1:
-                        no_go[i][j] = 2
+                if no_go[i][j] == 0:
+                    for k in range(4):
+                        l = (k+1) % 4
+                        diag1 = ((-(k%2))+(k//3)*2)
+                        diag2 = (1-abs(2-k))
+                        diag3 = ((-(l%2))+(l//3)*2)
+                        diag4 = (1-abs(2-l))
+                        # print(diag1, diag2)
+                        # print(diag3, diag4)
+                        # print("---------")
+                        if no_go[i+diag1][j+diag2] == 1\
+                                and no_go[i+diag3][j+diag4] == 1:
+                            no_go[i][j] = 2
         return no_go
 
     def enhance_no_go(self):
@@ -617,8 +623,6 @@ class Sokoban:
     # partial is a bool flag indicating to only redraw around the player
     def refresh_widget(self, partial):
         if not self.finished:
-            if DEBUG:
-                print("refreshing... partial = %s" % partial)
             if self.game_over():
                 partial = False
                 background_color = Qt.blue
