@@ -148,6 +148,20 @@ class Display:
         if event.key() == Qt.Key_F:
             self.dfs()
 
+        if event.key() == Qt.Key_Space:
+            if self.solution:
+                direction = self.solution.pop(0)
+                if coupled:
+                    for map in self.games:
+                        if not map.finished:
+                            map.move(direction)
+                            map.refresh_widget(True)
+                    print("------------------")
+                else:
+                    self.games[0].move(direction)
+                    self.games[0].refresh_widget(True)
+                self.widget.update()
+
     class Node:
         def __init__(self, cost, count, tupl):
             self.cost = cost
