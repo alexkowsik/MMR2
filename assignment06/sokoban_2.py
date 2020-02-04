@@ -11,11 +11,10 @@ from copy import deepcopy
 import heapq
 import time
 
-WIDTH = 400
 WIDTH = 250
 HEIGHT = WIDTH
 coupled = True
-DEBUG = False
+DEBUG = True
 black = 1
 N = 9
 
@@ -531,7 +530,8 @@ class Sokoban:
         self.destination = self.get_pos(4)
         self.finished = False
         self.box_pos = self.get_pos(2)
-        # self.no_go = self.calc_no_go()
+        self.no_go = self.calc_no_go()
+        print(self.game_size)
         print(self.game_size)
 
         self.RGB = [Qt.white, Qt.black, Qt.yellow, Qt.green, Qt.white]
@@ -545,18 +545,56 @@ class Sokoban:
                                    ][self.destination[1]] == 2
         return self.finished
 
-    # def calc_no_go(self):
-    #     no_go = self.state.deepcopy()
-    #     no_go[self.player_pos[0]][self.player_pos[1]] = 0
-    #     no_go[self.box_pos[0]][self.box_pos[1]] = 0
-    #     no_go[self.destination[0]][self.destination[1]] = 0
+    def calc_no_go(self):
+        no_go = deepcopy(self.state)
+        no_go[self.player_pos[0]][self.player_pos[1]] = 0
+        no_go[self.box_pos[0]][self.box_pos[1]] = 0
+        no_go[self.destination[0]][self.destination[1]] = 0
 
-        # for i in range(self.game_size):
-        #     for j in range(self.game_size):
-        #         for k in range(4):
-        #             if no_go[][] == 1 and no_go[][] == 1:
-        #                 no_go[i][j] = 2
-        # return
+        # mark all corners as no-go
+        for i in range(1, self.game_size-1):
+            for j in range(1, self.game_size-1):
+                for k in range(4):
+                    l = (k+1) % 4
+                    diag1 = ((-(k%2))+(k//3)*2)
+                    diag2 = (1-abs(2-k))
+                    diag3 = ((-(l%2))+(l//3)*2)
+                    diag4 = (1-abs(2-l))
+                    if no_go[i+diag1][j+diag2] == 1\
+                            and no_go[i+diag3][j+diag4] == 1:
+                        no_go[i][j] = 2
+
+        for i in range(1, self.game_size - 1):
+            for j in range(1, self.game_size - 1):
+                candidate = no_go[j]
+        return no_go
+
+    # def paint_border(self, origin, direction):
+    #     current = origin
+    #     side1 = False
+    #     side2 = False
+    #     steps = 0
+    #     while (0 < origin[0]+direction.x < self.game_size-1) and (1 < origin[1]+direction.y < self.game_size-1):
+    #         if self.no_go[current[0]][current[1]] == 1 or not side1 or not side2:
+    #             return
+    #         succ = [current[0] + direction.x, current[1] + direction.y]
+    #         if self.no_go[succ[0]][[succ[1]] == 2 and (side1 or side2):
+    #             break
+    #         else:
+    #             if direction == Directions.north or direction == Directions.south:
+    #                 side1 = side1 and
+    #                 side2 = side2 and
+    #             else:
+    #                 side1 = side1 and
+    #                 side2 = side2 and
+
+
+        for i in range(steps):
+            self.no_go[current[0]][current[1]] = 2
+            current[0] -= direction.x
+            current[1] -= direction.y
+        return
+
 
     # partial is a bool flag indicating to only redraw around the player
     def refresh_widget(self, partial):
@@ -647,8 +685,8 @@ class Sokoban:
             self.state[self.player_pos[0]][self.player_pos[1]] = 0
             self.state[self.player_pos[0] + direction.x][self.player_pos[1] + direction.y] = 3
             self.player_pos = tuple([self.player_pos[0]+direction.x, self.player_pos[1]+direction.y])
-            if DEBUG:
-                print("moved from %s to (%i, %i)" % self.player_pos, self.player_pos[0 + direction.x], self.player_pos[1 + direction.y])
+            # if DEBUG:
+            #     print("moved from %s to (%i, %i)" % self.player_pos, self.player_pos[0 + direction.x], self.player_pos[1 + direction.y])
         else:
             print("immovable!")
 
