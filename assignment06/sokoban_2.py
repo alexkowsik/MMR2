@@ -566,34 +566,35 @@ class Sokoban:
 
         for i in range(1, self.game_size - 1):
             for j in range(1, self.game_size - 1):
-                candidate = no_go[j]
+                if no_go[i][j] == 2:
+                    pass
         return no_go
 
-    # def paint_border(self, origin, direction):
-    #     current = origin
-    #     side1 = False
-    #     side2 = False
-    #     steps = 0
-    #     while (0 < origin[0]+direction.x < self.game_size-1) and (1 < origin[1]+direction.y < self.game_size-1):
-    #         if self.no_go[current[0]][current[1]] == 1 or not side1 or not side2:
-    #             return
-    #         succ = [current[0] + direction.x, current[1] + direction.y]
-    #         if self.no_go[succ[0]][[succ[1]] == 2 and (side1 or side2):
-    #             break
-    #         else:
-    #             if direction == Directions.north or direction == Directions.south:
-    #                 side1 = side1 and
-    #                 side2 = side2 and
-    #             else:
-    #                 side1 = side1 and
-    #                 side2 = side2 and
-
-
+    def paint_border(self, origin, direction):
+        current = origin
+        side1 = True        # yields bool value if side1 is completely walled
+        side2 = True        # yields bool value if side2 is completely walled
+        steps = 0
+        while (0 < current[0]+direction.x < self.game_size-1) and (1 < current[1]+direction.y < self.game_size-1):
+            if self.no_go[current[0]][current[1]] == 1 or not side1 or not side2:
+                return False
+            succ = [current[0] + direction.x, current[1] + direction.y]
+            if self.no_go[succ[0]][[succ[1]] == 2 and (side1 or side2):
+                break
+            else:
+                if direction == Directions.north or direction == Directions.south:
+                    side1 = side1 and self.no_go[current[0]+Directions.east.x][current[1]+Directions.east.y] == 1
+                    side2 = side2 and self.no_go[current[0]+Directions.west.x][current[1]+Directions.west.y] == 1
+                else:
+                    side1 = side1 and self.no_go[current[0]+Directions.north.x][current[1]+Directions.north.y] == 1
+                    side2 = side2 and self.no_go[current[0]+Directions.south.x][current[1]+Directions.south.y] == 1
+                current = succ
+                steps += 1
         for i in range(steps):
-            self.no_go[current[0]][current[1]] = 2
+            self.no_go[current[0]][current[1]] = 3      # must be 3 since 2 would cause painting everything
             current[0] -= direction.x
             current[1] -= direction.y
-        return
+        return True
 
 
     # partial is a bool flag indicating to only redraw around the player
@@ -626,7 +627,7 @@ class Sokoban:
                             color_id = self.state[row_index][column_index]
                             painterInstance.setBrush(
                                 QBrush(self.RGB[color_id], Qt.SolidPattern))
-                            if DEBUG and not (color_id == 1) and self.no_go[row_index][column_index] == 2:
+                            if DEBUG and not (color_id == 1) and self.no_go[row_index][column_index] > 1:
                                 painterInstance.setBrush(
                                     QBrush(Qt.red, Qt.SolidPattern))
                             elif self.game_over() and not (color_id == 1):
