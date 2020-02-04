@@ -531,6 +531,7 @@ class Sokoban:
         self.finished = False
         self.box_pos = self.get_pos(2)
         self.no_go = self.calc_no_go()
+        self.enhance_no_go()
         print(self.game_size)
         print(self.game_size)
 
@@ -563,33 +564,45 @@ class Sokoban:
                     if no_go[i+diag1][j+diag2] == 1\
                             and no_go[i+diag3][j+diag4] == 1:
                         no_go[i][j] = 2
-
-        for i in range(1, self.game_size - 1):
-            for j in range(1, self.game_size - 1):
-                if no_go[i][j] == 2:
-                    pass
         return no_go
+
+    def enhance_no_go(self):
+        for i in range(self.game_size):
+            for j in range(self.game_size):
+                if self.no_go[i][j] == 2:
+                    if self.no_go[i+Directions.north.x][j+Directions.north.y] == 1:
+                        self.paint_border([i, j], Directions.south)
+                    if self.no_go[i+Directions.east.x][j+Directions.east.y] == 1:
+                        self.paint_border([i, j], Directions.west)
+                    if self.no_go[i+Directions.south.x][j+Directions.south.y] == 1:
+                        self.paint_border([i, j], Directions.north)
+                    if self.no_go[i+Directions.west.x][j+Directions.west.y] == 1:
+                        self.paint_border([i, j], Directions.east)
 
     def paint_border(self, origin, direction):
         current = origin
         side1 = True        # yields bool value if side1 is completely walled
         side2 = True        # yields bool value if side2 is completely walled
         steps = 0
-        while (0 < current[0]+direction.x < self.game_size-1) and (1 < current[1]+direction.y < self.game_size-1):
-            if self.no_go[current[0]][current[1]] == 1 or not side1 or not side2:
+        while (0 < current[0]+direction.x < self.game_size-1) and (0 < current[1]+direction.y < self.game_size-1):
+            if self.no_go[current[0]+direction.x][current[1]+direction.y] == 1 or not (side1 or side2):
                 return False
-            succ = [current[0] + direction.x, current[1] + direction.y]
-            if self.no_go[succ[0]][[succ[1]] == 2 and (side1 or side2):
+            if self.no_go[current[0]+direction.x][current[1]+direction.y] == 2 and (side1 or side2):
                 break
+            if direction == Directions.north or direction == Directions.south:
+                side1 = side1 and self.no_go[current[0]+direction.x+Directions.east.x][current[1]+direction.y+Directions.east.y] == 1 \
+                        and self.no_go[current[0]+Directions.east.x][current[1]+Directions.east.y] == 1
+                side2 = side2 and self.no_go[current[0]+direction.x+Directions.west.x][current[1]+direction.y+Directions.west.y] == 1\
+                        and self.no_go[current[0]+Directions.west.x][current[1]+Directions.west.y] == 1
             else:
-                if direction == Directions.north or direction == Directions.south:
-                    side1 = side1 and self.no_go[current[0]+Directions.east.x][current[1]+Directions.east.y] == 1
-                    side2 = side2 and self.no_go[current[0]+Directions.west.x][current[1]+Directions.west.y] == 1
-                else:
-                    side1 = side1 and self.no_go[current[0]+Directions.north.x][current[1]+Directions.north.y] == 1
-                    side2 = side2 and self.no_go[current[0]+Directions.south.x][current[1]+Directions.south.y] == 1
-                current = succ
-                steps += 1
+                side1 = side1 and self.no_go[current[0]+direction.x+Directions.north.x][current[1]+direction.y+Directions.north.y] == 1\
+                        and self.no_go[current[0]+Directions.north.x][current[1]+Directions.north.y] == 1
+                side2 = side2 and self.no_go[current[0]+direction.x+Directions.south.x][current[1]+direction.y+Directions.south.y] == 1\
+                        and self.no_go[current[0]+Directions.south.x][current[1]+Directions.south.y] == 1
+            current[0] += direction.x
+            current[1] += direction.y
+            steps += 1
+            print(current)
         for i in range(steps):
             self.no_go[current[0]][current[1]] = 3      # must be 3 since 2 would cause painting everything
             current[0] -= direction.x
