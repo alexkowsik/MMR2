@@ -87,6 +87,7 @@ class Display:
         # self.timer.connect(self.printWay)
 
         self.displays = [None, None, None, None]
+        self.l = []
 
         for i in range(4):
             self.displays[i] = self.games[i].label
@@ -139,6 +140,30 @@ class Display:
                     if not map.finished:
                         map.move(Directions.east)
                         map.refresh_widget(True)
+                print("------------------")
+            else:
+                self.games[0].move(Directions.east)
+                self.games[0].refresh_widget(True)
+        self.widget.update()
+
+        if event.key() == Qt.Key_E or event.key() == Qt.Key_Right:
+            if coupled:
+                if self.l:
+                    tmp = self.l[0]
+                    print(tmp)
+                    self.l = self.l[1:]
+                    for map in self.games:
+                        if tmp == [-1, 0]:
+                            map.move(Directions.north)
+                        elif tmp == [1, 0]:
+                            map.move(Directions.south)
+                        elif tmp == [0, -1]:
+                            map.move(Directions.west)
+                        elif tmp == [0, 1]:
+                            map.move(Directions.east)
+                        else:
+                            pass
+                        map.refresh_widget(False)
                 print("------------------")
             else:
                 self.games[0].move(Directions.east)
@@ -297,48 +322,21 @@ class Display:
 
     def printWay(self, node, n):
         print("--------------")
-        print(node.state)
         while node.parent:
             old = node
             node = node.parent
-            print(node.state[0:2], node.state[4:6])
 
             l = [a - b for a, b in zip(old.state, node.state)]
-            tmp, i = l[0:2], 0
 
-            while(tmp == [0, 0]):
-                i += 1
+            tmp = l[0:2]
+            i = 1
+
+            while tmp == [0, 0]:
                 tmp = l[4*i:4*i+2]
 
-            if tmp == [-1, 0]:
-                for map in self.games:
-                    if not map.finished:
-                        map.move(Directions.north)
-                        map.refresh_widget(True)
-                    self.widget.update()
-            elif tmp == [1, 0]:
-                for map in self.games:
-                    if not map.finished:
-                        map.move(Directions.south)
-                        map.refresh_widget(True)
-                    self.widget.update()
-            elif tmp == [0, -1]:
-                for map in self.games:
-                    if not map.finished:
-                        map.move(Directions.west)
-                        map.refresh_widget(True)
-                    self.widget.update()
-            elif tmp == [0, 1]:
-                for map in self.games:
-                    if not map.finished:
-                        map.move(Directions.east)
-                        map.refresh_widget(True)
-                    self.widget.update()
-            else:
-                pass
-
-            time.sleep(1)
-
+            self.l.append(tmp)
+        self.l.reverse()
+        print("Path found. Press E to animate.")
         print("--------------")
 
     def getStats(self, n):
@@ -573,9 +571,9 @@ class Sokoban:
                 if no_go[i][j] == 0:
                     for k in range(4):
                         l = (k+1) % 4
-                        diag1 = ((-(k%2))+(k//3)*2)
+                        diag1 = ((-(k % 2))+(k//3)*2)
                         diag2 = (1-abs(2-k))
-                        diag3 = ((-(l%2))+(l//3)*2)
+                        diag3 = ((-(l % 2))+(l//3)*2)
                         diag4 = (1-abs(2-l))
                         # print(diag1, diag2)
                         # print(diag3, diag4)
@@ -612,29 +610,30 @@ class Sokoban:
                 break
             if direction == Directions.north or direction == Directions.south:
                 side1 = side1 and self.no_go[current[0]+direction.x+Directions.east.x][current[1]+direction.y+Directions.east.y] == 1 \
-                        and self.no_go[current[0]+Directions.east.x][current[1]+Directions.east.y] == 1
+                    and self.no_go[current[0]+Directions.east.x][current[1]+Directions.east.y] == 1
                 side2 = side2 and self.no_go[current[0]+direction.x+Directions.west.x][current[1]+direction.y+Directions.west.y] == 1\
-                        and self.no_go[current[0]+Directions.west.x][current[1]+Directions.west.y] == 1
+                    and self.no_go[current[0]+Directions.west.x][current[1]+Directions.west.y] == 1
             else:
                 side1 = side1 and self.no_go[current[0]+direction.x+Directions.north.x][current[1]+direction.y+Directions.north.y] == 1\
-                        and self.no_go[current[0]+Directions.north.x][current[1]+Directions.north.y] == 1
+                    and self.no_go[current[0]+Directions.north.x][current[1]+Directions.north.y] == 1
                 side2 = side2 and self.no_go[current[0]+direction.x+Directions.south.x][current[1]+direction.y+Directions.south.y] == 1\
-                        and self.no_go[current[0]+Directions.south.x][current[1]+Directions.south.y] == 1
+                    and self.no_go[current[0]+Directions.south.x][current[1]+Directions.south.y] == 1
             current[0] += direction.x
             current[1] += direction.y
             steps += 1
             print(current)
         if not (current[0] == 0 or current[0] == self.game_size-1 or current[1] == 0 or current[1] == self.game_size-1):
             for i in range(steps):
-                self.no_go[current[0]][current[1]] = 3      # must be 3 since 2 would cause painting everything
+                # must be 3 since 2 would cause painting everything
+                self.no_go[current[0]][current[1]] = 3
                 current[0] -= direction.x
                 current[1] -= direction.y
             return True
         else:
             return False
 
-
     # partial is a bool flag indicating to only redraw around the player
+
     def refresh_widget(self, partial):
         if not self.finished:
             if self.game_over():
@@ -689,7 +688,8 @@ class Sokoban:
                                                          WIDTH // self.game_size,
                                                          HEIGHT // self.game_size)
                                 if color_id == 2:
-                                    painterInstance.setBrush(QBrush(Qt.black, Qt.Dense6Pattern))
+                                    painterInstance.setBrush(
+                                        QBrush(Qt.black, Qt.Dense6Pattern))
                                     painterInstance.drawRect(column_index * WIDTH // self.game_size,
                                                              row_index * HEIGHT // self.game_size,
                                                              WIDTH // self.game_size,
@@ -717,11 +717,15 @@ class Sokoban:
     def move(self, direction):
         if self.is_movable(direction):
             if self.state[self.player_pos[0]+direction.x][self.player_pos[1]+direction.y] == 2:
-                self.state[self.player_pos[0] + 2 * direction.x][self.player_pos[1] + 2 * direction.y] = 2
-                self.box_pos = tuple([self.box_pos[0]+direction.x, self.box_pos[1]+direction.y])
+                self.state[self.player_pos[0] + 2 *
+                           direction.x][self.player_pos[1] + 2 * direction.y] = 2
+                self.box_pos = tuple(
+                    [self.box_pos[0]+direction.x, self.box_pos[1]+direction.y])
             self.state[self.player_pos[0]][self.player_pos[1]] = 0
-            self.state[self.player_pos[0] + direction.x][self.player_pos[1] + direction.y] = 3
-            self.player_pos = tuple([self.player_pos[0]+direction.x, self.player_pos[1]+direction.y])
+            self.state[self.player_pos[0] +
+                       direction.x][self.player_pos[1] + direction.y] = 3
+            self.player_pos = tuple(
+                [self.player_pos[0]+direction.x, self.player_pos[1]+direction.y])
             # if DEBUG:
             #     print("moved from %s to (%i, %i)" % self.player_pos, self.player_pos[0 + direction.x], self.player_pos[1 + direction.y])
         else:
@@ -781,6 +785,7 @@ class Sokoban:
                 return False
 
         return True
+
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
