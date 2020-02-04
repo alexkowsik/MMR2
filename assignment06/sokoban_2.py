@@ -550,7 +550,6 @@ class Sokoban:
         no_go = deepcopy(self.state)
         no_go[self.player_pos[0]][self.player_pos[1]] = 0
         no_go[self.box_pos[0]][self.box_pos[1]] = 0
-        no_go[self.destination[0]][self.destination[1]] = 0
 
         # mark all corners as no-go
         for i in range(1, self.game_size-1):
@@ -584,8 +583,10 @@ class Sokoban:
         side1 = True        # yields bool value if side1 is completely walled
         side2 = True        # yields bool value if side2 is completely walled
         steps = 0
-        while (0 < current[0]+direction.x < self.game_size-1) and (0 < current[1]+direction.y < self.game_size-1):
+        while (0 < current[0]+direction.x < self.game_size) and (0 < current[1]+direction.y < self.game_size):
             if self.no_go[current[0]+direction.x][current[1]+direction.y] == 1 or not (side1 or side2):
+                return False
+            if self.no_go[current[0]+2*direction.x][current[1]+2*direction.y] == 4:     # sketchy
                 return False
             if self.no_go[current[0]+direction.x][current[1]+direction.y] == 2 and (side1 or side2):
                 break
@@ -603,11 +604,14 @@ class Sokoban:
             current[1] += direction.y
             steps += 1
             print(current)
-        for i in range(steps):
-            self.no_go[current[0]][current[1]] = 3      # must be 3 since 2 would cause painting everything
-            current[0] -= direction.x
-            current[1] -= direction.y
-        return True
+        if not (current[0] == 0 or current[0] == self.game_size-1 or current[1] == 0 or current[1] == self.game_size-1):
+            for i in range(steps):
+                self.no_go[current[0]][current[1]] = 3      # must be 3 since 2 would cause painting everything
+                current[0] -= direction.x
+                current[1] -= direction.y
+            return True
+        else:
+            return False
 
 
     # partial is a bool flag indicating to only redraw around the player
@@ -640,7 +644,8 @@ class Sokoban:
                             color_id = self.state[row_index][column_index]
                             painterInstance.setBrush(
                                 QBrush(self.RGB[color_id], Qt.SolidPattern))
-                            if DEBUG and not (color_id == 1) and self.no_go[row_index][column_index] > 1:
+                            if DEBUG and not (color_id == 1) and (self.no_go[row_index][column_index] == 2
+                                                                  or self.no_go[row_index][column_index] == 3):
                                 painterInstance.setBrush(
                                     QBrush(Qt.red, Qt.SolidPattern))
                             elif self.game_over() and not (color_id == 1):
